@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la C:\\\\\\\\ai-dev\\\\\\\\warera)",
+      "Bash(ls C:\\\\\\\\ai-dev\\\\\\\\warera)",
+      "Bash(mkdir -p ../_warera_stash)",
+      "Bash(mv SPEC.md mockups ../_warera_stash/)",
+      "Bash(pnpm create *)"
+    ]
+  }
+}
