@@ -4,16 +4,6 @@ import { z } from "zod";
 export const PricesSchema = z.record(z.string(), z.number());
 export type Prices = z.infer<typeof PricesSchema>;
 
-/** gameConfig.getDates → game-day boundaries (ISO strings). */
-export const GameDatesSchema = z
-  .object({
-    nextDayAt: z.string(),
-    previousDayAt: z.string(),
-    nextRegenAt: z.string().optional(),
-  })
-  .loose();
-export type GameDates = z.infer<typeof GameDatesSchema>;
-
 /** gameStat.getEquipmentAvgByCode → a single average-quality number. */
 export const EquipmentAvgSchema = z.number();
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Item } from "@/lib/types";
 import { useEconomyItems, useEquipmentAvgs } from "@/lib/api/queries";
 import { useUIStore } from "@/lib/store/ui";
@@ -68,7 +68,7 @@ function Spark({ item }: { item: Item }) {
   );
 }
 
-function EconRow({ item }: { item: Item }) {
+function EconRow({ item, onSelect }: { item: Item; onSelect?: () => void }) {
   const selected = useUIStore((s) => s.selectedSymbol);
   const setSelected = useUIStore((s) => s.setSelectedSymbol);
   const active = selected === item.symbol;
@@ -76,7 +76,10 @@ function EconRow({ item }: { item: Item }) {
   return (
     <button
       type="button"
-      onClick={() => setSelected(item.symbol)}
+      onClick={() => {
+        setSelected(item.symbol);
+        onSelect?.();
+      }}
       aria-pressed={active}
       style={{ borderLeftColor: CATEGORY_COLOR[item.symbol] ?? "#6b7888" }}
       className={`grid w-full grid-cols-[20px_1fr_auto_54px] items-center gap-2.5 border-b border-l-[4px] border-line px-3 py-1.5 text-left transition-colors ${
@@ -159,7 +162,7 @@ function Tab({
 }
 
 /** Shared tabs + economy/military lists, used by both the rail and the mobile dropdown. */
-function RailLists() {
+function RailLists({ onSelect }: { onSelect?: () => void }) {
   const [tab, setTab] = useState<"economy" | "military">("economy");
   const { items } = useEconomyItems();
   const mil = tab === "military";
@@ -177,7 +180,7 @@ function RailLists() {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {!mil ? (
-          items.map((item) => <EconRow key={item.symbol} item={item} />)
+          items.map((item) => <EconRow key={item.symbol} item={item} onSelect={onSelect} />)
         ) : (
           <>
             <GroupLabel>Weapon</GroupLabel>
@@ -231,9 +234,6 @@ export function MarketsRailMobile({ className = "" }: { className?: string }) {
   const { items } = useEconomyItems();
   const cur = items.find((i) => i.symbol === selected) ?? items[0];
 
-  // Selecting an economy resource changes `selected` → close the dropdown.
-  useEffect(() => setOpen(false), [selected]);
-
   return (
     <div className={`relative bg-panel ${className}`}>
       <button
@@ -259,7 +259,7 @@ export function MarketsRailMobile({ className = "" }: { className?: string }) {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
           <div className="absolute left-0 right-0 top-full z-50 flex max-h-[65vh] flex-col overflow-hidden border-b border-line bg-panel shadow-xl">
-            <RailLists />
+            <RailLists onSelect={() => setOpen(false)} />
           </div>
         </>
       ) : null}

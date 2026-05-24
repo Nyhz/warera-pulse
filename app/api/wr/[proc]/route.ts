@@ -25,7 +25,6 @@ const CACHE_TTL: Record<string, number> = {
   "country.getAllCountries": 1800,
   "region.getRegionsObject": 1800,
   "tradingOrder.getTopOrders": 10,
-  "gameConfig.getDates": 300,
 };
 const DEFAULT_TTL = 15;
 

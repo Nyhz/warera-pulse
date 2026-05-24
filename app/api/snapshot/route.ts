@@ -3,7 +3,7 @@
  *
  * Collapses the whole live data set into ONE tRPC batch call to the WarEra
  * gateway (itemTrading.getPrices, battle.getBattles, event.getEventsPaginated,
- * ranking.getRanking, workOffer.getWageStats, gameConfig.getDates).
+ * ranking.getRanking, workOffer.getWageStats).
  *
  * Cached via Next's Data Cache (`next: { revalidate }`): on Vercel this is
  * shared across all serverless instances and persisted, so the gateway is hit
@@ -27,7 +27,6 @@ const PROCS: { proc: string; input: unknown }[] = [
   { proc: "event.getEventsPaginated", input: { limit: 30 } },
   { proc: "ranking.getRanking", input: { rankingType: "weeklyCountryDamages" } },
   { proc: "workOffer.getWageStats", input: { energy: 100, production: 100, citizenship: "" } },
-  { proc: "gameConfig.getDates", input: {} },
 ];
 
 export type Snapshot = {
@@ -36,7 +35,6 @@ export type Snapshot = {
   events: unknown;
   ranking: unknown;
   wage: unknown;
-  dates: unknown;
 };
 
 const EMPTY: Snapshot = {
@@ -45,7 +43,6 @@ const EMPTY: Snapshot = {
   events: null,
   ranking: null,
   wage: null,
-  dates: null,
 };
 
 async function fetchBatch(base: string): Promise<unknown[]> {
@@ -188,7 +185,6 @@ export async function GET() {
         events: unwrap(arr, 2),
         ranking: leanRanking(unwrap(arr, 3)),
         wage: unwrap(arr, 4),
-        dates: unwrap(arr, 5),
       }
     : EMPTY;
 

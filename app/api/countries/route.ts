@@ -57,7 +57,7 @@ export async function GET() {
   }
   return Response.json(out, {
     headers: {
-      "cache-control": `public, s-maxage=${REVALIDATE}, stale-while-revalidate=${REVALIDATE * 2}`,
+      "cache-control": `public, max-age=0, must-revalidate, s-maxage=${REVALIDATE}`,
     },
   });
 }

@@ -13,7 +13,9 @@ const MIN_DAMAGE = 10_000_000;
 function Countdown({ iso }: { iso?: string }) {
   const [left, setLeft] = useState<number | null>(null);
   useEffect(() => {
+    // Client-only ticking countdown; first value is computed right after mount.
     if (!iso) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLeft(null);
       return;
     }

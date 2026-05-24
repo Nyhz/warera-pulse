@@ -7,7 +7,7 @@ import { Panel, PanelHead } from "@/components/ui/Panel";
 import { ItemIcon } from "@/components/ui/ItemIcon";
 import { Flag } from "@/components/ui/Flag";
 import { ECONOMY_ITEMS, RECIPES, RAW_POINTS } from "@/lib/catalog";
-import { formatPrice, formatPct } from "@/lib/util/format";
+import { formatPrice } from "@/lib/util/format";
 
 const ITEM_NAME: Record<string, string> = Object.fromEntries(
   ECONOMY_ITEMS.map((i) => [i.code, i.name]),
@@ -69,6 +69,30 @@ function BarRow({
 
 type Mode = "buy" | "full";
 
+function ModeBtn({
+  m,
+  label,
+  mode,
+  setMode,
+}: {
+  m: Mode;
+  label: string;
+  mode: Mode;
+  setMode: (m: Mode) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => setMode(m)}
+      className={`rounded-[3px] border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.07em] transition-colors ${
+        mode === m ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-dim hover:text-txt"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
 function Refining({ prices, className = "" }: { prices: Record<string, number>; className?: string }) {
   const [mode, setMode] = useState<Mode>("buy");
 
@@ -96,24 +120,12 @@ function Refining({ prices, className = "" }: { prices: Record<string, number>; 
   const min = Math.min(...rows.map((r) => r.perPoint));
   const max = Math.max(...rows.map((r) => r.perPoint));
 
-  const ModeBtn = ({ m, label }: { m: Mode; label: string }) => (
-    <button
-      type="button"
-      onClick={() => setMode(m)}
-      className={`rounded-[3px] border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.07em] transition-colors ${
-        mode === m ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-dim hover:text-txt"
-      }`}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <Panel className={`flex h-[460px] flex-col overflow-hidden lg:h-auto lg:min-h-0 ${className}`}>
       <PanelHead title="Refining Margins" meta="MARGIN / PT" />
       <div className="flex h-[44px] shrink-0 items-center gap-1.5 border-b border-line px-3">
-        <ModeBtn m="buy" label="Buy" />
-        <ModeBtn m="full" label="Full chain" />
+        <ModeBtn m="buy" label="Buy" mode={mode} setMode={setMode} />
+        <ModeBtn m="full" label="Full chain" mode={mode} setMode={setMode} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
         {rows.map((r, i) => (
@@ -147,6 +159,30 @@ function Refining({ prices, className = "" }: { prices: Record<string, number>; 
 }
 
 type Sort = "bonus" | "dev" | "tax";
+
+function SortBtn({
+  k,
+  lbl,
+  sort,
+  setSort,
+}: {
+  k: Sort;
+  lbl: string;
+  sort: Sort;
+  setSort: (s: Sort) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => setSort(k)}
+      className={`shrink-0 rounded-[3px] border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] transition-colors ${
+        sort === k ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-dim hover:text-txt"
+      }`}
+    >
+      {lbl}
+    </button>
+  );
+}
 
 /** Combined production bonus for making `resource` in a country (base + the
  * +30% specialization when the country specializes in that resource). */
@@ -196,18 +232,6 @@ function Nations({ countries, className = "" }: { countries: Country[]; classNam
   const fmt = (v: number) =>
     sort === "dev" ? String(Math.round(v)) : sort === "tax" ? `${pct(v)}%` : `+${pct(v)}%`;
 
-  const SortBtn = ({ k, lbl }: { k: Sort; lbl: string }) => (
-    <button
-      type="button"
-      onClick={() => setSort(k)}
-      className={`shrink-0 rounded-[3px] border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] transition-colors ${
-        sort === k ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-dim hover:text-txt"
-      }`}
-    >
-      {lbl}
-    </button>
-  );
-
   return (
     <Panel className={`flex h-[460px] flex-col overflow-hidden lg:h-auto lg:min-h-0 ${className}`}>
       <PanelHead title="Nations Economy" meta={`${rows.length} of ${countries.length}`} />
@@ -237,9 +261,9 @@ function Nations({ countries, className = "" }: { countries: Country[]; classNam
           </select>
         ) : null}
         <div className="ml-auto flex shrink-0 gap-1.5">
-          <SortBtn k="bonus" lbl="Bonus" />
-          <SortBtn k="dev" lbl="Dev" />
-          <SortBtn k="tax" lbl="Tax" />
+          <SortBtn k="bonus" lbl="Bonus" sort={sort} setSort={setSort} />
+          <SortBtn k="dev" lbl="Dev" sort={sort} setSort={setSort} />
+          <SortBtn k="tax" lbl="Tax" sort={sort} setSort={setSort} />
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-2.5">

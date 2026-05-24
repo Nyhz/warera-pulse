@@ -5,7 +5,6 @@ import {
   BattlesPageSchema,
   CurrentRoundSchema,
   EventsPageSchema,
-  GameDatesSchema,
   PricesSchema,
   RankingSchema,
   TopOrdersSchema,
@@ -53,7 +52,6 @@ type RawSnapshot = {
   events: unknown;
   ranking: unknown;
   wage: unknown;
-  dates: unknown;
 };
 
 /**
@@ -198,15 +196,6 @@ export function useWageStats() {
   const wage = q.data?.wage;
   const parsed = wage ? WageStatsSchema.safeParse(wage) : null;
   const data = parsed?.success ? parsed.data.allowedRange : undefined;
-  return { data, isError: q.isError, isLoading: q.isLoading };
-}
-
-/** Game-day boundaries / server clock anchor — from the snapshot. */
-export function useGameDates() {
-  const q = useSnapshot();
-  const dates = q.data?.dates;
-  const parsed = dates ? GameDatesSchema.safeParse(dates) : null;
-  const data = parsed?.success ? parsed.data : undefined;
   return { data, isError: q.isError, isLoading: q.isLoading };
 }
 

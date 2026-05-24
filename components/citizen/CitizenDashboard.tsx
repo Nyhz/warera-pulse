@@ -54,10 +54,12 @@ export function CitizenDashboard() {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Restore the last-loaded id so it's already there next visit.
+  // Restore the last-loaded id so it's already there next visit. Done after
+  // mount to avoid a server/client hydration mismatch from reading localStorage.
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserId(saved);
       setInput(saved);
     }
@@ -187,7 +189,11 @@ export function CitizenDashboard() {
 
           {/* net worth + snapshot */}
           <div className="mt-px grid gap-px bg-line md:grid-cols-[1.15fr_0.85fr]">
-            <NetWorth wealth={data.user.wealth} tier={data.user.wealthRank.tier} />
+            <NetWorth
+              wealth={data.user.wealth}
+              tier={data.user.wealthRank.tier}
+              estimated={data.user.estimatedWealth}
+            />
             <Panel className="flex flex-col">
               <PanelHead title="Snapshot" />
               <div className="grid grid-cols-2 gap-px bg-line sm:grid-cols-3">
@@ -385,7 +391,15 @@ const NW_SEGMENTS: { key: keyof CitizenWealth; label: string; color: string }[] 
   { key: "money", label: "Money", color: "var(--color-down)" },
 ];
 
-function NetWorth({ wealth, tier }: { wealth: CitizenWealth; tier: string | null }) {
+function NetWorth({
+  wealth,
+  tier,
+  estimated,
+}: {
+  wealth: CitizenWealth;
+  tier: string | null;
+  estimated: number;
+}) {
   const total = wealth.total || 1;
   return (
     <Panel className="flex flex-col">
@@ -395,7 +409,12 @@ function NetWorth({ wealth, tier }: { wealth: CitizenWealth; tier: string | null
           <span className="text-amber">$</span>
           {money(wealth.total)}
         </div>
-        <div className="mt-0.5 text-[11px] text-dim">Estimated total wealth · in-game currency</div>
+        <div className="mt-0.5 text-[11px] text-dim">
+          Total assets · in-game currency
+          {estimated > 0 ? (
+            <span className="text-faint"> · game est. ${money(estimated, 0)}</span>
+          ) : null}
+        </div>
         <div className="my-4 flex h-2.5 overflow-hidden rounded-[2px] border border-line">
           {NW_SEGMENTS.map((s) => {
             const pct = (wealth[s.key] / total) * 100;

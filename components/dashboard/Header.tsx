@@ -30,6 +30,9 @@ function NavLink({ href, label, active }: { href: string; label: string; active:
 function useClock() {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    // Client-only clock: starts after mount to avoid a server/client hydration
+    // mismatch on the rendered time.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
@@ -47,9 +50,6 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
-
-  // Close the mobile menu whenever the route changes.
-  useEffect(() => setMenuOpen(false), [pathname]);
 
   return (
     <header className="relative flex items-center gap-3.5 border-b border-line bg-panel px-4 py-[11px]">

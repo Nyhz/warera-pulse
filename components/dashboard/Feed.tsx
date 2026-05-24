@@ -61,7 +61,10 @@ export function Feed({ className = "" }: { className?: string }) {
 
   const [country, setCountry] = useState("");
   useEffect(() => {
+    // Restore the persisted filter after mount; reading localStorage during
+    // render would cause a server/client hydration mismatch.
     const saved = localStorage.getItem(FEED_COUNTRY_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved) setCountry(saved);
   }, []);
   const pickCountry = (id: string) => {
