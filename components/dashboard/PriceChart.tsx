@@ -1,15 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  CandlestickSeries,
-  ColorType,
-  createChart,
-  LineSeries,
-  type CandlestickData,
-  type IChartApi,
-  type UTCTimestamp,
-} from "lightweight-charts";
+import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { sma, ema } from "@/lib/domain/indicators";
 import {
   useDaySparks,
@@ -19,7 +11,6 @@ import {
   type Timeframe,
 } from "@/lib/api/queries";
 import { useUIStore } from "@/lib/store/ui";
-import type { Candle } from "@/lib/types";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { arrow, formatCompact, formatPct, formatPrice, priceDecimals } from "@/lib/util/format";
 
@@ -28,140 +19,15 @@ const EMA_PERIOD = 9;
 const SMA_COLOR = "#d29922";
 const EMA_COLOR = "#39c0d3";
 
-function maLineData(
-  candles: Candle[],
-  values: (number | null)[],
-): { time: UTCTimestamp; value: number }[] {
-  const out: { time: UTCTimestamp; value: number }[] = [];
-  candles.forEach((c, i) => {
-    const v = values[i];
-    if (v != null) out.push({ time: c.time as UTCTimestamp, value: v });
-  });
-  return out;
-}
-
-function Chart({
-  candles,
-  decimals,
-  showSMA,
-  showEMA,
-}: {
-  candles: Candle[];
-  decimals: number;
-  showSMA: boolean;
-  showEMA: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const legendRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || candles.length === 0) return;
-
-    const chart: IChartApi = createChart(el, {
-      autoSize: true,
-      layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#3d4757",
-        fontFamily: "var(--font-mono)",
-        fontSize: 10,
-        attributionLogo: false,
-      },
-      grid: {
-        vertLines: { color: "#141b26" },
-        horzLines: { color: "#141b26" },
-      },
-      rightPriceScale: { borderColor: "#1a2230" },
-      timeScale: { borderColor: "#1a2230", timeVisible: true, secondsVisible: false },
-      crosshair: {
-        vertLine: { color: "#39c0d3", labelBackgroundColor: "#0d121c" },
-        horzLine: { color: "#39c0d3", labelBackgroundColor: "#0d121c" },
-      },
-    });
-
-    const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#3fb950",
-      downColor: "#f85149",
-      wickUpColor: "#3fb950",
-      wickDownColor: "#f85149",
-      borderVisible: false,
-      priceFormat: {
-        type: "price",
-        precision: decimals,
-        minMove: Math.pow(10, -decimals),
-      },
-    });
-    candleSeries.setData(
-      candles.map(
-        (c): CandlestickData => ({
-          time: c.time as UTCTimestamp,
-          open: c.open,
-          high: c.high,
-          low: c.low,
-          close: c.close,
-        }),
-      ),
-    );
-
-    const closes = candles.map((c) => c.close);
-    if (showSMA) {
-      const s = chart.addSeries(LineSeries, {
-        color: SMA_COLOR,
-        lineWidth: 1,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false,
-      });
-      s.setData(maLineData(candles, sma(closes, SMA_PERIOD)));
-    }
-    if (showEMA) {
-      const e = chart.addSeries(LineSeries, {
-        color: EMA_COLOR,
-        lineWidth: 1,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false,
-      });
-      e.setData(maLineData(candles, ema(closes, EMA_PERIOD)));
-    }
-
-    chart.timeScale().fitContent();
-
-    const fmt = (v: number) => v.toFixed(decimals);
-    const setLegend = (c?: Candle) => {
-      if (!legendRef.current || !c) return;
-      const cu = c.close >= c.open;
-      legendRef.current.innerHTML =
-        `<span class="text-faint">O</span> ${fmt(c.open)}  ` +
-        `<span class="text-faint">H</span> ${fmt(c.high)}  ` +
-        `<span class="text-faint">L</span> ${fmt(c.low)}  ` +
-        `<span class="text-faint">C</span> <span class="${cu ? "text-up" : "text-down"}">${fmt(c.close)}</span>`;
-    };
-    setLegend(candles[candles.length - 1]);
-    chart.subscribeCrosshairMove((param) => {
-      const bar = param.time
-        ? (param.seriesData.get(candleSeries) as CandlestickData | undefined)
-        : undefined;
-      setLegend(
-        bar
-          ? { time: 0, open: bar.open, high: bar.high, low: bar.low, close: bar.close }
-          : candles[candles.length - 1],
-      );
-    });
-
-    return () => chart.remove();
-  }, [candles, decimals, showSMA, showEMA]);
-
-  return (
-    <div className="relative h-full min-h-0 w-full flex-1">
-      <div
-        ref={legendRef}
-        className="pointer-events-none absolute left-2 top-1 z-10 font-mono text-[10px] text-dim"
-      />
-      <div ref={ref} className="h-full w-full" />
+// Heavy charting lib loaded on demand → kept out of the initial JS bundle.
+const Chart = dynamic(() => import("./PriceChartCanvas").then((m) => m.Chart), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center font-mono text-[12px] text-faint">
+      Loading chart…
     </div>
-  );
-}
+  ),
+});
 
 function Stat({ k, v, muted }: { k: string; v: string; muted?: boolean }) {
   return (
@@ -234,20 +100,7 @@ export function PriceChart({ className = "" }: { className?: string }) {
   const low = day ? (livePrice > 0 ? Math.min(day.low, livePrice) : day.low) : 0;
   const hasDay = !!day && open > 0;
 
-  // Reflect the live price in the current (forming) hourly candle's close.
-  const candles = useMemo(() => {
-    if (!rawCandles.length || livePrice <= 0) return rawCandles;
-    const cur = rawCandles[rawCandles.length - 1];
-    const updated: Candle = {
-      ...cur,
-      close: livePrice,
-      high: Math.max(cur.high, livePrice),
-      low: Math.min(cur.low, livePrice),
-    };
-    return [...rawCandles.slice(0, -1), updated];
-  }, [rawCandles, livePrice]);
-
-  const ready = candles.length > 1;
+  const ready = rawCandles.length > 1;
   const price = livePrice > 0 ? livePrice : last;
   const decimals = priceDecimals(price || 1);
   const pctChange = open > 0 && price > 0 ? (price - open) / open : item?.change24h ?? 0;
@@ -268,7 +121,7 @@ export function PriceChart({ className = "" }: { className?: string }) {
   const buy = buyQty + sellQty > 0 ? Math.round((buyQty / (buyQty + sellQty)) * 100) : 50;
   const sell = 100 - buy;
 
-  const closes = candles.map((c) => c.close);
+  const closes = rawCandles.map((c) => c.close);
   const lastSma = ready ? sma(closes, SMA_PERIOD).at(-1) ?? null : null;
   const lastEma = ready ? ema(closes, EMA_PERIOD).at(-1) ?? null : null;
 
@@ -348,7 +201,13 @@ export function PriceChart({ className = "" }: { className?: string }) {
               Accruing price history…
             </div>
           ) : (
-            <Chart candles={candles} decimals={decimals} showSMA={showSMA} showEMA={showEMA} />
+            <Chart
+              candles={rawCandles}
+              livePrice={livePrice}
+              decimals={decimals}
+              showSMA={showSMA}
+              showEMA={showEMA}
+            />
           )}
         </div>
 

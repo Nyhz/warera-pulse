@@ -66,6 +66,85 @@ function unwrap(arr: unknown[], i: number): unknown {
   return entry.result?.data ?? null;
 }
 
+// --- Server-side trimming: the raw snapshot is ~174 KB/poll (battles carry
+// hundreds of muOrder ids + unused fields, ranking has 180 rows). The UI uses a
+// small subset, so we strip it here before sending it every 15s. ---
+
+type RawSide = {
+  country?: string | null;
+  region?: string | null;
+  damages?: number;
+  hitCount?: number;
+  wonRoundsCount?: number;
+  muOrders?: unknown[];
+};
+type RawRoundSide = { points?: number; damages?: number };
+type RawRound = {
+  number?: number;
+  attacker?: RawRoundSide;
+  defender?: RawRoundSide;
+  live?: { actualTickPoints?: number; nextTickAt?: string };
+};
+type RawBattle = {
+  _id: string;
+  roundsToWin?: number;
+  attacker?: RawSide;
+  defender?: RawSide;
+  currentRound?: unknown;
+};
+
+function leanSide(s?: RawSide) {
+  return {
+    country: s?.country ?? null,
+    region: s?.region ?? null,
+    damages: s?.damages ?? 0,
+    hitCount: s?.hitCount ?? 0,
+    wonRoundsCount: s?.wonRoundsCount ?? 0,
+    mus: Array.isArray(s?.muOrders) ? s.muOrders.length : 0,
+  };
+}
+
+function leanRound(r: unknown): unknown {
+  if (!r || typeof r !== "object") return r ?? null;
+  const round = r as RawRound;
+  return {
+    number: round.number,
+    attacker: { points: round.attacker?.points ?? 0, damages: round.attacker?.damages ?? 0 },
+    defender: { points: round.defender?.points ?? 0, damages: round.defender?.damages ?? 0 },
+    live: round.live
+      ? { actualTickPoints: round.live.actualTickPoints, nextTickAt: round.live.nextTickAt }
+      : undefined,
+  };
+}
+
+function leanBattles(raw: unknown): unknown {
+  const items = (raw as { items?: unknown[] } | null)?.items;
+  if (!Array.isArray(items)) return raw;
+  return {
+    items: items.map((b) => {
+      const battle = b as RawBattle;
+      return {
+        _id: battle._id,
+        roundsToWin: battle.roundsToWin,
+        attacker: leanSide(battle.attacker),
+        defender: leanSide(battle.defender),
+        currentRound: leanRound(battle.currentRound),
+      };
+    }),
+  };
+}
+
+function leanRanking(raw: unknown): unknown {
+  const items = (raw as { items?: unknown[] } | null)?.items;
+  if (!Array.isArray(items)) return raw;
+  return {
+    items: items.slice(0, 15).map((e) => {
+      const entry = e as { country?: string; value?: number; rank?: number };
+      return { country: entry.country, value: entry.value, rank: entry.rank };
+    }),
+  };
+}
+
 export async function GET() {
   let arr: unknown[];
   try {
@@ -81,9 +160,9 @@ export async function GET() {
 
   const snapshot: Snapshot = {
     prices: unwrap(arr, 0) as Record<string, number> | null,
-    battles: unwrap(arr, 1),
+    battles: leanBattles(unwrap(arr, 1)),
     events: unwrap(arr, 2),
-    ranking: unwrap(arr, 3),
+    ranking: leanRanking(unwrap(arr, 3)),
     wage: unwrap(arr, 4),
     dates: unwrap(arr, 5),
   };

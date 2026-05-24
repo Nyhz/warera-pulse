@@ -38,6 +38,8 @@ const BattleSideSchema = z
     damages: z.number().default(0),
     hitCount: z.number().default(0),
     wonRoundsCount: z.number().default(0),
+    // Server sends `mus` (count); `muOrders` kept optional for resilience.
+    mus: z.number().default(0),
     muOrders: z.array(z.string()).default([]),
   })
   .loose();

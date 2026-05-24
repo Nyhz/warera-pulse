@@ -3,13 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { wrFetch } from "./client";
 import {
   BattlesPageSchema,
-  CountrySchema,
   CurrentRoundSchema,
   EventsPageSchema,
   GameDatesSchema,
   PricesSchema,
   RankingSchema,
-  RegionSchema,
   TopOrdersSchema,
   WageStatsSchema,
   type Country,
@@ -255,44 +253,29 @@ export function useEquipmentAvgs(enabled = true) {
   });
 }
 
-/** All countries, indexed by id (for resolving battle/ranking country refs). */
+/** All countries, indexed by id (server-trimmed to id/name/code). */
 export function useCountries() {
   return useQuery({
     queryKey: ["countries"],
     queryFn: async () => {
-      const raw = await wrFetch<unknown>("country.getAllCountries");
-      const arr = Array.isArray(raw) ? raw : Object.values(raw as object);
+      const res = await fetch("/api/countries");
+      const arr = (await res.json()) as Country[];
       const byId = new Map<string, Country>();
-      for (const c of arr) {
-        const parsed = CountrySchema.safeParse(c);
-        if (parsed.success) byId.set(parsed.data._id, parsed.data);
-      }
+      for (const c of arr) byId.set(c._id, c);
       return byId;
     },
     staleTime: 30 * 60_000,
   });
 }
 
-function regionDisplay(code?: string, name?: string | null): string {
-  if (name) return name;
-  if (!code) return "";
-  const parts = code.split("-");
-  const rest = parts.length > 1 ? parts.slice(1) : parts;
-  return rest.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-}
-
-/** All regions, indexed by id → display name (derived from code). */
+/** All regions, indexed by id → display name (server-trimmed map). */
 export function useRegions() {
   return useQuery({
     queryKey: ["regions"],
     queryFn: async () => {
-      const raw = await wrFetch<Record<string, unknown>>("region.getRegionsObject");
-      const byId = new Map<string, string>();
-      for (const v of Object.values(raw)) {
-        const parsed = RegionSchema.safeParse(v);
-        if (parsed.success) byId.set(parsed.data._id, regionDisplay(parsed.data.code, parsed.data.name));
-      }
-      return byId;
+      const res = await fetch("/api/regions");
+      const obj = (await res.json()) as Record<string, string>;
+      return new Map(Object.entries(obj));
     },
     staleTime: 30 * 60_000,
   });
@@ -342,7 +325,7 @@ export function useLiveBattles(): {
             damage: aDmg,
             share: aShare,
             ground: round?.attacker.points ?? 0,
-            mus: b.attacker.muOrders.length,
+            mus: b.attacker.mus,
             wonRounds: b.attacker.wonRoundsCount,
           },
           defender: {
@@ -350,7 +333,7 @@ export function useLiveBattles(): {
             damage: dDmg,
             share: 100 - aShare,
             ground: round?.defender.points ?? 0,
-            mus: b.defender.muOrders.length,
+            mus: b.defender.mus,
             wonRounds: b.defender.wonRoundsCount,
           },
           roundsToWin: b.roundsToWin,
