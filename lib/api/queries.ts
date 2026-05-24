@@ -216,13 +216,12 @@ export type OfferStat = {
   attack: number | null;
   crit: number | null;
   state: number | null;
-  count: number;
 };
 
 /**
- * Equipment floor prices (cheapest offer per item) via the BYOT proxy. Sends
- * the user's token if connected; otherwise still tries (the server may have a
- * fresh global cache from another user's token).
+ * Equipment floor prices (cheapest offer per item). Served from the shared
+ * Supabase cache, so everyone — even without a token — sees prices; a connected
+ * token only refreshes the shared copy when stale. Returns the offers map.
  */
 export function useEquipmentOffers(enabled = true) {
   const token = useToken((s) => s.token);
@@ -230,9 +229,13 @@ export function useEquipmentOffers(enabled = true) {
     queryKey: ["offers", !!token],
     enabled,
     queryFn: async () => {
-      const res = await fetch("/api/offers", token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+      const res = await fetch(
+        "/api/offers",
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
+      );
       if (!res.ok) return {} as Record<string, OfferStat>;
-      return (await res.json()) as Record<string, OfferStat>;
+      const json = (await res.json()) as { offers?: Record<string, OfferStat> };
+      return json.offers ?? {};
     },
     staleTime: 30_000,
     refetchInterval: 30_000,

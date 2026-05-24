@@ -20,6 +20,20 @@ create index if not exists price_history_code_ts_idx
 -- and reads keep working with zero policies.
 alter table price_history enable row level security;
 
+-- Equipment market floor prices: a shared, persistent cache of the auth-gated
+-- itemOffer.getItemOffers (BYOT). One row per item (upsert) → always ≤36 rows,
+-- never grows. Refreshed by any visitor who connects a token; everyone reads it.
+create table if not exists equipment_offers (
+  item_code  text primary key,
+  floor      double precision not null,
+  attack     double precision,
+  crit       double precision,
+  state      double precision,
+  updated_at timestamptz      not null default now()
+);
+
+alter table equipment_offers enable row level security;
+
 -- Optional housekeeping: drop rows older than 30 days to stay tiny.
 -- Schedule via Supabase cron (pg_cron) or run manually:
 --   delete from price_history where ts < now() - interval '30 days';
