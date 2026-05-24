@@ -7,7 +7,38 @@ import { useUIStore } from "@/lib/store/ui";
 import { ARMOR_SLOTS, ARMOR_TIERS, WEAPON_TIERS, armorCode } from "@/lib/catalog";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { ItemIcon } from "@/components/ui/ItemIcon";
+import { EquipmentIcon } from "@/components/ui/EquipmentIcon";
 import { formatPrice } from "@/lib/util/format";
+
+/** Left-border category color per resource — a quick visual grouping. */
+const CATEGORY_COLOR: Record<string, string> = {
+  // raw resources — grey
+  limestone: "#6b7888",
+  iron: "#6b7888",
+  petroleum: "#6b7888",
+  lead: "#6b7888",
+  coca: "#6b7888",
+  grain: "#6b7888",
+  livestock: "#6b7888",
+  fish: "#6b7888",
+  // refined + light ammo + bread — green
+  concrete: "#3fb950",
+  steel: "#3fb950",
+  oil: "#3fb950",
+  bread: "#3fb950",
+  lightAmmo: "#3fb950",
+  // scraps, steak, ammo — blue
+  scraps: "#3b6fd6",
+  steak: "#3b6fd6",
+  ammo: "#3b6fd6",
+  // cooked fish, heavy ammo, cocaine — purple
+  cookedFish: "#7d5fd0",
+  heavyAmmo: "#7d5fd0",
+  cocain: "#7d5fd0",
+  // cases
+  case1: "#d29922",
+  case2: "#f85149",
+};
 
 function Spark({ item }: { item: Item }) {
   const vals = item.spark ?? [];
@@ -47,8 +78,11 @@ function EconRow({ item }: { item: Item }) {
       type="button"
       onClick={() => setSelected(item.symbol)}
       aria-pressed={active}
-      className={`grid w-full grid-cols-[20px_1fr_auto_54px] items-center gap-2.5 border-b border-line px-3 py-1.5 text-left transition-colors hover:bg-[#0e1420] ${
-        active ? "bg-[#0f1826] shadow-[inset_2px_0_0_var(--color-accent)]" : ""
+      style={{ borderLeftColor: CATEGORY_COLOR[item.symbol] ?? "#6b7888" }}
+      className={`grid w-full grid-cols-[20px_1fr_auto_54px] items-center gap-2.5 border-b border-l-[4px] border-line px-3 py-1.5 text-left transition-colors ${
+        active
+          ? "bg-[#0f1826] shadow-[inset_-2px_0_0_var(--color-accent)]"
+          : "hover:bg-[#0e1420]"
       }`}
     >
       <ItemIcon code={item.symbol} className="h-5 w-5 rounded-[2px]" />
@@ -67,22 +101,24 @@ function EconRow({ item }: { item: Item }) {
 }
 
 function MilRow({
+  code,
   label,
   tier,
   price,
   loading,
 }: {
+  code: string;
   label: string;
   tier: number;
   price?: number;
   loading: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[28px_1fr_auto] items-center gap-2 border-b border-line px-3 py-[7px]">
-      <span className="rounded-[2px] bg-[#10161f] text-center font-mono text-[10px] font-bold text-dim">
-        T{tier}
+    <div className="grid grid-cols-[26px_1fr_auto] items-center gap-2 border-b border-line px-3 py-[7px]">
+      <EquipmentIcon code={code} className="h-[22px] w-[22px]" />
+      <span className="truncate text-[11px] font-semibold">
+        {label} <span className="font-mono text-[9px] text-faint">T{tier}</span>
       </span>
-      <span className="truncate text-[11px] font-semibold">{label}</span>
       <span className="font-mono text-[12px] font-bold tabular-nums">
         {price != null ? formatPrice(price, 2) : loading ? "…" : "—"}
       </span>
@@ -148,6 +184,7 @@ export function MarketsRail({ className = "" }: { className?: string }) {
             {WEAPON_TIERS.map((w) => (
               <MilRow
                 key={w.code}
+                code={w.code}
                 label={w.name}
                 tier={w.tier}
                 price={avgs?.[w.code]}
@@ -160,7 +197,8 @@ export function MarketsRail({ className = "" }: { className?: string }) {
                 {ARMOR_TIERS.map((t) => (
                   <MilRow
                     key={armorCode(slot.slot, t)}
-                    label={`${slot.name} T${t}`}
+                    code={armorCode(slot.slot, t)}
+                    label={slot.name}
                     tier={t}
                     price={avgs?.[armorCode(slot.slot, t)]}
                     loading={avgsLoading}

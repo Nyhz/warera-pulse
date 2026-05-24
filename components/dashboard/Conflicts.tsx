@@ -58,9 +58,11 @@ function ConflictCard({ battle }: { battle: LiveBattle }) {
   const d = battle.defender;
   const aLeads = a.ground > d.ground;
   const dLeads = d.ground > a.ground;
+  // A side past ~250 ground is about to take the round — flag it as ending soon.
+  const nearEnd = Math.max(a.ground, d.ground) > 250;
 
   return (
-    <div className="border-b border-line px-3.5 py-3">
+    <div className={`border-b border-line px-3.5 py-3 ${nearEnd ? "battle-near-end" : ""}`}>
       {/* region + the prominent best-of-2 result */}
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="truncate text-[12px] font-bold text-txt">
@@ -89,12 +91,12 @@ function ConflictCard({ battle }: { battle: LiveBattle }) {
         >
           ⛰ {a.ground}
         </span>
-        <span className="text-center font-mono text-[9px] leading-tight text-dim">
+        <span className="text-center font-mono text-[10px] leading-tight text-dim">
           <span className="text-up">+{battle.tickPoints}⛰</span> /tick
           {battle.nextTickAt ? (
             <>
               <br />
-              <span className="text-faint">
+              <span className="text-txt">
                 ⏱ <Countdown iso={battle.nextTickAt} />
               </span>
             </>

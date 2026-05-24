@@ -7,27 +7,27 @@
 
 export type EconItem = { code: string; name: string };
 
-/** The fixed 21 tradeable resources, grouped industrials → agri/food → military → cases. */
+/** The fixed 21 tradeable resources, ordered raws → refined → agri/food → military → cases. */
 export const ECONOMY_ITEMS: EconItem[] = [
-  { code: "oil", name: "Oil" },
-  { code: "iron", name: "Iron" },
-  { code: "lead", name: "Lead" },
+  { code: "scraps", name: "Scraps" },
   { code: "limestone", name: "Limestone" },
+  { code: "iron", name: "Iron" },
   { code: "petroleum", name: "Petroleum" },
+  { code: "lead", name: "Lead" },
+  { code: "coca", name: "Coca" },
   { code: "concrete", name: "Concrete" },
   { code: "steel", name: "Steel" },
-  { code: "scraps", name: "Scraps" },
+  { code: "oil", name: "Oil" },
   { code: "grain", name: "Grain" },
   { code: "livestock", name: "Livestock" },
   { code: "fish", name: "Fish" },
   { code: "bread", name: "Bread" },
   { code: "steak", name: "Steak" },
   { code: "cookedFish", name: "Cooked Fish" },
-  { code: "coca", name: "Coca" },
-  { code: "cocain", name: "Cocaine" },
   { code: "lightAmmo", name: "Light Ammo" },
-  { code: "heavyAmmo", name: "Heavy Ammo" },
   { code: "ammo", name: "Ammo" },
+  { code: "heavyAmmo", name: "Heavy Ammo" },
+  { code: "cocain", name: "Cocaine" },
   { code: "case1", name: "Case I" },
   { code: "case2", name: "Case II" },
 ];

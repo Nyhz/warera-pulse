@@ -5,6 +5,7 @@ import { PriceChart } from "@/components/dashboard/PriceChart";
 import { HotNations } from "@/components/dashboard/HotNations";
 import { Conflicts } from "@/components/dashboard/Conflicts";
 import { Feed } from "@/components/dashboard/Feed";
+import { Transactions } from "@/components/dashboard/Transactions";
 
 export default function Home() {
   return (
@@ -26,13 +27,16 @@ export default function Home() {
 
         {/* Hot nations + active conflicts: side by side under the chart at md,
             right column at lg */}
-        <div className="order-3 grid min-w-0 grid-cols-1 gap-px bg-line md:grid-cols-2 md:[grid-column:2] md:[grid-row:2] lg:grid-cols-1 lg:grid-rows-[auto_minmax(0,1fr)] lg:[grid-column:3] lg:[grid-row:1/3] lg:min-h-0">
-          <HotNations className="shrink-0 md:min-h-0 lg:self-auto" />
+        <div className="order-3 grid min-w-0 grid-cols-1 gap-px bg-line md:grid-cols-2 md:[grid-column:2] md:[grid-row:2] lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)_minmax(0,1.2fr)] lg:[grid-column:3] lg:[grid-row:1/3] lg:min-h-0">
+          <HotNations className="max-h-[360px] min-h-0 md:max-h-none md:min-h-0 lg:min-h-0" />
           <Conflicts className="md:max-h-[300px] lg:max-h-none lg:min-h-0" />
         </div>
 
-        {/* Global feed — full-width bottom row at md, col 2 row 2 at lg, last on mobile */}
-        <Feed className="order-4 h-[420px] min-w-0 md:[grid-column:1/3] md:[grid-row:3] lg:[grid-column:2] lg:[grid-row:2] lg:h-auto lg:min-h-0" />
+        {/* Bottom row: Global Feed + Market Trades side by side (stacked on mobile/md) */}
+        <div className="order-4 grid min-w-0 grid-cols-1 gap-px bg-line md:[grid-column:1/3] md:[grid-row:3] lg:grid-cols-2 lg:[grid-column:2] lg:[grid-row:2] lg:min-h-0">
+          <Feed className="h-[420px] min-w-0 lg:h-auto lg:min-h-0" />
+          <Transactions className="h-[420px] min-w-0 lg:h-auto lg:min-h-0" />
+        </div>
       </main>
     </AppShell>
   );

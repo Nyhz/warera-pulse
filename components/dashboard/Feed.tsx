@@ -1,11 +1,43 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useFeed } from "@/lib/api/queries";
-import type { Country } from "@/lib/api/schemas";
+import type { Country, WrEvent } from "@/lib/api/schemas";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { Flag } from "@/components/ui/Flag";
+import { CountryPicker } from "@/components/ui/CountryPicker";
+import { ItemIcon } from "@/components/ui/ItemIcon";
+import { ECONOMY_CODES } from "@/lib/catalog";
 import { formatCompact } from "@/lib/util/format";
+
+const ECON_SET = new Set(ECONOMY_CODES);
+const FEED_COUNTRY_KEY = "wr-feed-country";
+
+/** Country-id fields that can appear in an event's `data`, by event type. */
+const COUNTRY_FIELDS = [
+  "attackerCountry",
+  "defenderCountry",
+  "toCountry",
+  "fromCountry",
+  "country",
+  "occupyingCountryId",
+  "revoltingCountryId",
+  "wonBy",
+];
+
+/** All country ids an event involves (top-level + type-specific data fields). */
+function eventCountryIds(e: WrEvent): Set<string> {
+  const ids = new Set<string>(e.countries ?? []);
+  const d = e.data as Record<string, unknown>;
+  for (const f of COUNTRY_FIELDS) {
+    const v = d[f];
+    if (typeof v === "string" && /^[0-9a-fA-F]{24}$/.test(v)) ids.add(v);
+  }
+  if (Array.isArray(d.countries)) {
+    for (const v of d.countries) if (typeof v === "string") ids.add(v);
+  }
+  return ids;
+}
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-GB", {
@@ -24,6 +56,27 @@ function humanize(type: string): string {
 
 export function Feed({ className = "" }: { className?: string }) {
   const { events, countriesById, regionsById, isLoading, isError } = useFeed();
+
+  const [country, setCountry] = useState("");
+  useEffect(() => {
+    const saved = localStorage.getItem(FEED_COUNTRY_KEY);
+    if (saved) setCountry(saved);
+  }, []);
+  const pickCountry = (id: string) => {
+    setCountry(id);
+    if (id) localStorage.setItem(FEED_COUNTRY_KEY, id);
+    else localStorage.removeItem(FEED_COUNTRY_KEY);
+  };
+  const countryOptions = useMemo(
+    () =>
+      countriesById ? [...countriesById.values()].sort((a, b) => a.name.localeCompare(b.name)) : [],
+    [countriesById],
+  );
+  const shown = useMemo(
+    () => (country ? events.filter((e) => eventCountryIds(e).has(country)) : events),
+    [events, country],
+  );
+  const countryName = country ? countriesById?.get(country)?.name : null;
 
   const tag = (id?: string): ReactNode => {
     const c: Country | undefined = id ? countriesById?.get(id) : undefined;
@@ -108,11 +161,17 @@ export function Feed({ className = "" }: { className?: string }) {
           icon: <span className="text-down">💸</span>,
           msg: <>{tag(s("country"))} went bankrupt</>,
         };
-      case "depositDiscovered":
+      case "depositDiscovered": {
+        const code = s("itemCode") ?? "";
         return {
-          icon: <span className="text-amber">⛏</span>,
-          msg: <><b className="font-mono">{s("itemCode")}</b> deposit +{String(d.bonusPercent ?? "")}% in <b>{region(s("region"))}</b></>,
+          icon: ECON_SET.has(code) ? (
+            <ItemIcon code={code} className="h-4 w-4 rounded-[2px]" />
+          ) : (
+            <span className="text-amber">⛏</span>
+          ),
+          msg: <><b className="font-mono">{code}</b> deposit +{String(d.bonusPercent ?? "")}% in <b>{region(s("region"))}</b></>,
         };
+      }
       case "newPresident":
         return {
           icon: <span className="text-amber">🏛</span>,
@@ -128,7 +187,12 @@ export function Feed({ className = "" }: { className?: string }) {
 
   return (
     <Panel className={`flex min-h-0 flex-col overflow-hidden ${className}`}>
-      <PanelHead title="Global Feed" meta="LIVE EVENTS" />
+      <PanelHead
+        title="Global Feed"
+        badge={
+          <CountryPicker countries={countryOptions} value={country} onChange={pickCountry} />
+        }
+      />
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isError ? (
           <div className="px-3.5 py-10 text-center font-mono text-[11px] text-down">
@@ -138,12 +202,12 @@ export function Feed({ className = "" }: { className?: string }) {
           <div className="px-3.5 py-10 text-center font-mono text-[11px] text-faint">
             Loading events…
           </div>
-        ) : events.length === 0 ? (
+        ) : shown.length === 0 ? (
           <div className="px-3.5 py-10 text-center font-mono text-[11px] text-faint">
-            No recent events
+            No recent events{countryName ? ` for ${countryName}` : ""}
           </div>
         ) : (
-          events.slice(0, 20).map((e) => {
+          shown.slice(0, 20).map((e) => {
             const { icon, msg } = render(e);
             return (
               <div

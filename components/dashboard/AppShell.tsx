@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Header } from "./Header";
 import { LiveStatus } from "./LiveStatus";
+import { LoadingOverlay } from "./LoadingOverlay";
 
 /**
  * Shared page chrome: the header (logo, tool nav, wage, clock) and footer,
@@ -16,6 +17,7 @@ export function AppShell({ children, fill = false }: { children: ReactNode; fill
         fill ? "lg:h-dvh lg:overflow-hidden" : "min-h-dvh"
       }`}
     >
+      <LoadingOverlay />
       <Header />
       {children}
       <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-line px-4 py-2.5 text-[10.5px] tracking-[0.04em] text-faint">

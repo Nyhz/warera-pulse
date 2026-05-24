@@ -440,6 +440,31 @@ export function useCitizen(userId?: string) {
   });
 }
 
+export type MarketTx = {
+  id: string;
+  code: string;
+  type: string;
+  quantity: number;
+  money: number;
+  createdAt: string;
+  buyer: string | null;
+  seller: string | null;
+};
+
+/** Latest item-market fills for the transactions feed (own 15s-cached route). */
+export function useTransactions() {
+  return useQuery({
+    queryKey: ["transactions"],
+    queryFn: async (): Promise<MarketTx[]> => {
+      const res = await fetch("/api/transactions");
+      const json = (await res.json()) as { items?: MarketTx[] };
+      return json.items ?? [];
+    },
+    staleTime: POLL,
+    refetchInterval: POLL,
+  });
+}
+
 /** Best buy/sell orders for one resource (for spread + BUY/SELL pressure). */
 export function useTopOrders(itemCode: string, enabled = true) {
   return useQuery({

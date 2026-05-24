@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/queries";
 import { useUIStore } from "@/lib/store/ui";
 import { Panel, PanelHead } from "@/components/ui/Panel";
+import { Spinner } from "@/components/ui/Spinner";
 import { arrow, formatCompact, formatPct, formatPrice, priceDecimals } from "@/lib/util/format";
 
 const SMA_PERIOD = 20;
@@ -23,15 +24,15 @@ const EMA_COLOR = "#39c0d3";
 const Chart = dynamic(() => import("./PriceChartCanvas").then((m) => m.Chart), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center font-mono text-[12px] text-faint">
-      Loading chart…
+    <div className="flex h-full items-center justify-center">
+      <Spinner />
     </div>
   ),
 });
 
 function Stat({ k, v, muted }: { k: string; v: string; muted?: boolean }) {
   return (
-    <div className="flex-1 border-r border-line px-2.5 py-[7px] last:border-r-0">
+    <div className="flex-1 border-r border-line px-3.5 py-[7px] last:border-r-0">
       <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-dim">
         {k}
       </div>
@@ -63,7 +64,7 @@ function MaToggle({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-[2px] border px-2 py-1 font-mono text-[10.5px] font-bold transition-opacity ${
+      className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[2px] border px-2 py-1 font-mono text-[10.5px] font-bold transition-opacity ${
         on ? "border-line" : "border-line opacity-40"
       }`}
     >
@@ -129,29 +130,23 @@ export function PriceChart({ className = "" }: { className?: string }) {
     <Panel className={`flex min-h-0 flex-col overflow-hidden ${className}`}>
       <PanelHead title={`Price · ${item?.symbol.toUpperCase() ?? ""}`} meta="LIVE · WARERA GATEWAY" />
       <div className="flex min-h-0 flex-1 flex-col p-4">
-        <div className="flex shrink-0 items-start justify-between">
+        <div className="flex shrink-0 items-end justify-between gap-4">
           <div>
             <div className="text-[12px] font-semibold text-dim">{item?.name}</div>
-            <div className="font-mono text-[32px] font-bold leading-[1.05] tabular-nums">
-              {formatPrice(price, decimals)} <span className="text-[13px] text-dim">cr</span>
+            <div className="flex items-baseline gap-2.5 font-mono leading-[1.05]">
+              <span className="text-[32px] font-bold tabular-nums">
+                {formatPrice(price, decimals)} <span className="text-[13px] text-dim">cr</span>
+              </span>
+              <span className={`text-[15px] font-bold ${up ? "text-up" : "text-down"}`}>
+                {arrow(pctChange)} {formatPct(pctChange)}
+              </span>
             </div>
           </div>
-          <div
-            className={`text-right font-mono text-[14px] font-bold ${
-              up ? "text-up" : "text-down"
-            }`}
-          >
-            {arrow(pctChange)} {formatPct(pctChange)}
+          <div className="flex w-[235px] shrink-0 overflow-hidden rounded-[3px] border border-line">
+            <Stat k="24h O" v={hasDay ? formatPrice(open, decimals) : "—"} />
+            <Stat k="24h H" v={hasDay ? formatPrice(high, decimals) : "—"} />
+            <Stat k="24h L" v={hasDay ? formatPrice(low, decimals) : "—"} />
           </div>
-        </div>
-
-        <div className="mt-3 flex shrink-0 overflow-hidden rounded-[3px] border border-line">
-          <Stat k="24h H" v={hasDay ? formatPrice(high, decimals) : "—"} />
-          <Stat k="24h L" v={hasDay ? formatPrice(low, decimals) : "—"} />
-          <Stat k="24h O" v={hasDay ? formatPrice(open, decimals) : "—"} />
-          <Stat k="Bid" v={bestBid != null ? formatPrice(bestBid, decimals) : "—"} />
-          <Stat k="Ask" v={bestAsk != null ? formatPrice(bestAsk, decimals) : "—"} />
-          <Stat k="Spread" v={spread != null ? formatPrice(spread, decimals) : "—"} />
         </div>
 
         <div className="mt-2.5 flex shrink-0 flex-wrap items-center gap-2">
@@ -177,7 +172,7 @@ export function PriceChart({ className = "" }: { className?: string }) {
           >
             {tf === "week" ? "7D · 1H" : "30D · 12H"}
           </span>
-          <div className="ml-auto flex gap-1.5">
+          <div className="ml-auto flex w-[235px] gap-1.5">
             <MaToggle
               on={showSMA}
               color={SMA_COLOR}
@@ -199,8 +194,9 @@ export function PriceChart({ className = "" }: { className?: string }) {
         <div className="mt-2.5 flex min-h-0 flex-1 gap-3">
           <div className="min-h-0 flex-1">
             {!ready ? (
-              <div className="flex h-full items-center justify-center px-6 text-center font-mono text-[12px] text-faint">
-                Accruing price history…
+              <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+                <Spinner />
+                <span className="font-mono text-[11px] text-faint">Accruing price history…</span>
               </div>
             ) : (
               <Chart

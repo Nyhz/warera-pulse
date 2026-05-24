@@ -6,12 +6,12 @@ import { formatCompact } from "@/lib/util/format";
 import { Flag } from "@/components/ui/Flag";
 
 export function HotNations({ className = "" }: { className?: string }) {
-  const { nations, isLoading } = useHotNations(6);
+  const { nations, isLoading } = useHotNations(15);
 
   return (
     <Panel className={`flex flex-col overflow-hidden ${className}`}>
       <PanelHead title="🔥 Hot Nations" meta="WEEKLY DAMAGE" />
-      <div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading && nations.length === 0 ? (
           <div className="px-3.5 py-6 text-center font-mono text-[11px] text-faint">
             Loading…
