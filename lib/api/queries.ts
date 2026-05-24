@@ -88,9 +88,25 @@ export function useItemPrices() {
   };
 }
 
+export type DaySpark = { points: number[]; open: number; high: number; low: number };
+
+/** Last-24h trend for all items (hourly closes + open/high/low) from the DB. */
+export function useDaySparks() {
+  return useQuery({
+    queryKey: ["spark24h"],
+    queryFn: async () => {
+      const res = await fetch("/api/spark");
+      return (await res.json()) as Record<string, DaySpark>;
+    },
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+  });
+}
+
 /**
- * The 21 economy resources as UI `Item`s: live price (snapshot) + session
- * change and sparkline (in-memory history accumulated across polls).
+ * The 21 economy resources as UI `Item`s: live price (15s snapshot) + 24h
+ * sparkline and change from the ingested DB. The live price is appended as the
+ * sparkline's last point so its tip and the % change stay live every 15s.
  */
 export function useEconomyItems(): {
   items: Item[];
@@ -98,18 +114,22 @@ export function useEconomyItems(): {
   isError: boolean;
 } {
   const { data, isLoading, isError } = useSnapshot();
-  const series = useHistory((s) => s.series);
+  const sparks = useDaySparks();
   const prices = data?.prices;
+  const sparkData = sparks.data;
   const items = useMemo(
     () =>
       ECONOMY_ITEMS.map(({ code, name }): Item => {
         const price = prices?.[code] ?? 0;
-        const spark = (series[code] ?? []).map((p) => p.v);
-        const change =
-          spark.length > 1 && spark[0] > 0 ? (spark[spark.length - 1] - spark[0]) / spark[0] : 0;
+        const day = sparkData?.[code];
+        const base = day?.points ?? [];
+        // Append the live price so the sparkline ends "now" and updates at 15s.
+        const spark = price > 0 ? [...base, price] : base;
+        const open = day?.open ?? base[0] ?? 0;
+        const change = open > 0 && price > 0 ? (price - open) / open : 0;
         return { symbol: code, name, price, change24h: change, spark };
       }),
-    [prices, series],
+    [prices, sparkData],
   );
   return { items, isLoading, isError };
 }

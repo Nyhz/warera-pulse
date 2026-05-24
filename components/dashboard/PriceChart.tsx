@@ -11,7 +11,13 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { sma, ema } from "@/lib/domain/indicators";
-import { useEconomyItems, useItemHistory, useTopOrders, type Timeframe } from "@/lib/api/queries";
+import {
+  useDaySparks,
+  useEconomyItems,
+  useItemHistory,
+  useTopOrders,
+  type Timeframe,
+} from "@/lib/api/queries";
 import { useUIStore } from "@/lib/store/ui";
 import type { Candle } from "@/lib/types";
 import { Panel, PanelHead } from "@/components/ui/Panel";
@@ -213,11 +219,20 @@ export function PriceChart({ className = "" }: { className?: string }) {
   const [showEMA, setShowEMA] = useState(true);
   const [tf, setTf] = useState<Timeframe>("week");
 
-  const { candles: rawCandles, open, high, low, last } = useItemHistory(item?.symbol, tf);
+  const { candles: rawCandles, last } = useItemHistory(item?.symbol, tf);
   const { data: orders } = useTopOrders(item?.symbol ?? "", !!item);
+  const { data: sparks } = useDaySparks();
 
   // Headline price is LIVE (15s snapshot); the chart bars are hourly history.
   const livePrice = item?.price ?? 0;
+
+  // 24h stats (High/Low/Open) + % change from the ingested DB, with the live
+  // price folded into the extremes so they stay current at 15s.
+  const day = item ? sparks?.[item.symbol] : undefined;
+  const open = day?.open ?? 0;
+  const high = day ? Math.max(day.high, livePrice) : 0;
+  const low = day ? (livePrice > 0 ? Math.min(day.low, livePrice) : day.low) : 0;
+  const hasDay = !!day && open > 0;
 
   // Reflect the live price in the current (forming) hourly candle's close.
   const candles = useMemo(() => {
@@ -278,9 +293,9 @@ export function PriceChart({ className = "" }: { className?: string }) {
         </div>
 
         <div className="mt-3 flex shrink-0 overflow-hidden rounded-[3px] border border-line">
-          <Stat k="High" v={ready ? formatPrice(high, decimals) : "—"} />
-          <Stat k="Low" v={ready ? formatPrice(low, decimals) : "—"} />
-          <Stat k="Open" v={ready ? formatPrice(open, decimals) : "—"} />
+          <Stat k="24h H" v={hasDay ? formatPrice(high, decimals) : "—"} />
+          <Stat k="24h L" v={hasDay ? formatPrice(low, decimals) : "—"} />
+          <Stat k="24h O" v={hasDay ? formatPrice(open, decimals) : "—"} />
           <Stat k="Bid" v={bestBid != null ? formatPrice(bestBid, decimals) : "—"} />
           <Stat k="Ask" v={bestAsk != null ? formatPrice(bestAsk, decimals) : "—"} />
           <Stat k="Spread" v={spread != null ? formatPrice(spread, decimals) : "—"} />
