@@ -1,65 +1,40 @@
-import Image from "next/image";
+import { Header } from "@/components/dashboard/Header";
+import { Ticker } from "@/components/dashboard/Ticker";
+import { MarketsRail } from "@/components/dashboard/MarketsRail";
+import { PriceChart } from "@/components/dashboard/PriceChart";
+import { HotNations } from "@/components/dashboard/HotNations";
+import { Conflicts } from "@/components/dashboard/Conflicts";
+import { Feed } from "@/components/dashboard/Feed";
+import { LiveStatus } from "@/components/dashboard/LiveStatus";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="mx-auto flex w-full max-w-[1920px] flex-col lg:h-dvh lg:overflow-hidden">
+      <Header />
+      <Ticker />
+
+      <main className="flex flex-1 flex-col gap-px bg-line lg:grid lg:min-h-0 lg:grid-cols-[248px_1fr_360px]">
+        {/* Left — markets rail (Economy / Military tabs), selects the chart */}
+        <MarketsRail className="order-3 max-h-[360px] lg:order-none lg:max-h-none" />
+
+        {/* Center — price chart over global feed */}
+        <div className="order-1 flex min-h-0 flex-col gap-px bg-line lg:order-none">
+          <PriceChart className="h-[480px] lg:h-auto lg:min-h-0 lg:flex-[3]" />
+          <Feed className="lg:min-h-0 lg:flex-[2]" />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Right — hot nations over active conflicts */}
+        <div className="order-2 flex min-h-0 flex-col gap-px bg-line lg:order-none">
+          <HotNations className="shrink-0" />
+          <Conflicts className="lg:min-h-0 lg:flex-1" />
         </div>
       </main>
+
+      <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-line px-4 py-2.5 text-[10.5px] tracking-[0.04em] text-faint">
+        <LiveStatus />
+        <span>Powered by the WarEra Gateway · supported by warerastats.io</span>
+        <span className="w-[44px]" aria-hidden />
+      </footer>
     </div>
   );
 }

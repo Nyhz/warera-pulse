@@ -1,26 +1,79 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Terminal palette — ported from the approved mockup */
+  --color-bg: #070a0f;
+  --color-panel: #0b0f17;
+  --color-panel2: #0d121c;
+  --color-line: #1a2230;
+  --color-txt: #c8d2e0;
+  --color-dim: #6b7888;
+  --color-faint: #3d4757;
+  --color-up: #3fb950;
+  --color-down: #f85149;
+  --color-amber: #d29922;
+  --color-cyan: #39c0d3;
+  --color-accent: #3fb950;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-txt);
+  font-family: var(--font-sans);
+  /* faint terminal scanline */
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.012) 3px
+  );
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tiny uppercase section/eyebrow label */
+.label {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+  font-weight: 600;
+}
+
+/* Live-dot pulse */
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(63, 185, 80, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(63, 185, 80, 0);
+  }
+}
+
+/* Ticker marquee */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none !important;
+  }
+  .live-dot {
+    animation: none !important;
+  }
 }
