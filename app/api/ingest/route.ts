@@ -1,18 +1,14 @@
 import type { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { ECONOMY_CODES } from "@/lib/catalog";
-import { chunkForRun, fetchEquipmentPrices, persistOffers } from "@/lib/offers";
-
-// The rotating equipment slice can take ~15s on the gateway; allow headroom.
-export const maxDuration = 60;
 
 /**
- * Scheduled ingestion (cron-job.org, ~every 10min) with
- * `Authorization: Bearer <INGEST_SECRET>`:
- *  - appends a price snapshot for the 21 resources to `price_history`, and
- *  - refreshes the shared `equipment_offers` table with last-traded equipment
- *    prices (gateway key, no token — the slow 36-code transaction batch runs
- *    here in the background so user requests just read the table).
+ * Price-history ingestion. Called on a schedule (cron-job.org, ~every 10min)
+ * with `Authorization: Bearer <INGEST_SECRET>`. Pulls the current prices for
+ * the 21 resources from the gateway and appends one row per item to Supabase.
+ *
+ * This is the ONLY thing we persist — every other panel stays live (equipment
+ * prices come live-batched from gameStat.getEquipmentAvgByCode via /api/equipment).
  */
 const GATEWAY = "https://gateway.warerastats.io/trpc";
 const API2 = "https://api2.warera.io/trpc";
@@ -57,16 +53,5 @@ export async function POST(req: NextRequest) {
   const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 3600 * 1000).toISOString();
   await supabase.from("price_history").delete().lt("ts", cutoff);
 
-  // Refresh ONE rotating slice of equipment prices (full set every ~30min).
-  // Best-effort; never blocks the price ingest.
-  let offers = 0;
-  try {
-    const prices = await fetchEquipmentPrices(chunkForRun());
-    await persistOffers(prices);
-    offers = Object.keys(prices).length;
-  } catch {
-    /* leave existing equipment_offers in place */
-  }
-
-  return Response.json({ inserted: rows.length, ts, offers });
+  return Response.json({ inserted: rows.length, ts });
 }

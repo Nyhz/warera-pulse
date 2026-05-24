@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Item } from "@/lib/types";
-import { useEconomyItems, useEquipmentAvgs, useEquipmentOffers, type OfferStat } from "@/lib/api/queries";
+import { useEconomyItems, useEquipmentAvgs } from "@/lib/api/queries";
 import { useUIStore } from "@/lib/store/ui";
 import { ARMOR_SLOTS, ARMOR_TIERS, WEAPON_TIERS, armorCode } from "@/lib/catalog";
 import { Panel, PanelHead } from "@/components/ui/Panel";
@@ -64,21 +64,15 @@ function EconRow({ item }: { item: Item }) {
   );
 }
 
-function quality(v: number): string {
-  return v < 100 ? v.toFixed(1) : String(Math.round(v));
-}
-
 function MilRow({
   label,
   tier,
-  value,
-  offer,
+  price,
   loading,
 }: {
   label: string;
   tier: number;
-  value?: number;
-  offer?: OfferStat;
+  price?: number;
   loading: boolean;
 }) {
   return (
@@ -87,17 +81,8 @@ function MilRow({
         T{tier}
       </span>
       <span className="truncate text-[11px] font-semibold">{label}</span>
-      <span className="text-right font-mono leading-tight tabular-nums">
-        {offer ? (
-          <>
-            <span className="block text-[12px] font-bold text-txt">{formatPrice(offer.price)}</span>
-            {value != null ? <span className="block text-[9px] text-faint">Q{quality(value)}</span> : null}
-          </>
-        ) : (
-          <span className="block text-[12px] font-bold text-amber">
-            {value != null ? quality(value) : loading ? "…" : "—"}
-          </span>
-        )}
+      <span className="font-mono text-[12px] font-bold tabular-nums">
+        {price != null ? formatPrice(price) : loading ? "…" : "—"}
       </span>
     </div>
   );
@@ -140,7 +125,6 @@ export function MarketsRail({ className = "" }: { className?: string }) {
   const { items } = useEconomyItems();
   const mil = tab === "military";
   const { data: avgs, isLoading: avgsLoading } = useEquipmentAvgs(mil);
-  const { data: offers } = useEquipmentOffers(mil);
 
   return (
     <Panel className={`flex min-h-0 flex-col overflow-hidden ${className}`}>
@@ -164,8 +148,7 @@ export function MarketsRail({ className = "" }: { className?: string }) {
                 key={w.code}
                 label={w.name}
                 tier={w.tier}
-                value={avgs?.[w.code]}
-                offer={offers?.[w.code]}
+                price={avgs?.[w.code]}
                 loading={avgsLoading}
               />
             ))}
@@ -177,8 +160,7 @@ export function MarketsRail({ className = "" }: { className?: string }) {
                     key={armorCode(slot.slot, t)}
                     label={`${slot.name} T${t}`}
                     tier={t}
-                    value={avgs?.[armorCode(slot.slot, t)]}
-                    offer={offers?.[armorCode(slot.slot, t)]}
+                    price={avgs?.[armorCode(slot.slot, t)]}
                     loading={avgsLoading}
                   />
                 ))}

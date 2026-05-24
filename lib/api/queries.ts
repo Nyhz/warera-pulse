@@ -210,33 +210,7 @@ export function useGameDates() {
   return { data, isError: q.isError, isLoading: q.isLoading };
 }
 
-export type OfferStat = {
-  price: number;
-  attack: number | null;
-  crit: number | null;
-  state: number | null;
-};
-
-/**
- * Last-traded equipment prices (from itemMarket transactions via the gateway
- * key). Shared/cached server-side — no token needed.
- */
-export function useEquipmentOffers(enabled = true) {
-  return useQuery({
-    queryKey: ["offers"],
-    enabled,
-    queryFn: async () => {
-      const res = await fetch("/api/offers");
-      if (!res.ok) return {} as Record<string, OfferStat>;
-      const json = (await res.json()) as { offers?: Record<string, OfferStat> };
-      return json.offers ?? {};
-    },
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-  });
-}
-
-/** Average quality for every equipment code (one batched call). */
+/** Average market price for every equipment code (one batched call). */
 export function useEquipmentAvgs(enabled = true) {
   return useQuery({
     queryKey: ["equipmentAvgs"],
