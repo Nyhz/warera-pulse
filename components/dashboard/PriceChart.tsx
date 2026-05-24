@@ -11,7 +11,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { sma, ema } from "@/lib/domain/indicators";
-import { useEconomyItems, useItemHistory, useTopOrders } from "@/lib/api/queries";
+import { useEconomyItems, useItemHistory, useTopOrders, type Timeframe } from "@/lib/api/queries";
 import { useUIStore } from "@/lib/store/ui";
 import type { Candle } from "@/lib/types";
 import { Panel, PanelHead } from "@/components/ui/Panel";
@@ -211,8 +211,9 @@ export function PriceChart({ className = "" }: { className?: string }) {
   );
   const [showSMA, setShowSMA] = useState(true);
   const [showEMA, setShowEMA] = useState(true);
+  const [tf, setTf] = useState<Timeframe>("week");
 
-  const { candles: rawCandles, open, high, low, last } = useItemHistory(item?.symbol);
+  const { candles: rawCandles, open, high, low, last } = useItemHistory(item?.symbol, tf);
   const { data: orders } = useTopOrders(item?.symbol ?? "", !!item);
 
   // Headline price is LIVE (15s snapshot); the chart bars are hourly history.
@@ -286,11 +287,27 @@ export function PriceChart({ className = "" }: { className?: string }) {
         </div>
 
         <div className="mt-2.5 flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex gap-0.5">
+            {(["week", "month"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTf(t)}
+                className={`rounded-[2px] border px-[11px] py-1 font-mono text-[11px] font-bold uppercase tracking-[0.06em] transition-colors ${
+                  tf === t
+                    ? "border-accent bg-accent text-[#06210d]"
+                    : "border-line text-dim hover:text-txt"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
           <span
             className="rounded-[2px] bg-up/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] text-up"
-            title="7-day hourly history · live price every 15s"
+            title="historical candles · live price every 15s"
           >
-            7D · 1H
+            {tf === "week" ? "7D · 1H" : "30D · 12H"}
           </span>
           <div className="ml-auto flex gap-1.5">
             <MaToggle

@@ -123,34 +123,39 @@ export type ItemHistory = {
   change: number;
 };
 
-/** Bucket raw {t,v} session points into hourly OHLC candles. */
-function bucketHourly(pts: { t: number; v: number }[]): Candle[] {
-  const byHour = new Map<number, Candle>();
+export type Timeframe = "week" | "month";
+
+/** Candle interval (seconds) per timeframe — must match /api/history's TF map. */
+const TF_BUCKET: Record<Timeframe, number> = { week: 3600, month: 12 * 3600 };
+
+/** Bucket raw {t,v} session points into OHLC candles of `bucket` seconds. */
+function bucketCandles(pts: { t: number; v: number }[], bucket: number): Candle[] {
+  const byBucket = new Map<number, Candle>();
   for (const p of pts) {
-    const time = p.t - (p.t % 3600);
-    const cur = byHour.get(time);
-    if (!cur) byHour.set(time, { time, open: p.v, high: p.v, low: p.v, close: p.v });
+    const time = p.t - (p.t % bucket);
+    const cur = byBucket.get(time);
+    if (!cur) byBucket.set(time, { time, open: p.v, high: p.v, low: p.v, close: p.v });
     else {
       cur.high = Math.max(cur.high, p.v);
       cur.low = Math.min(cur.low, p.v);
       cur.close = p.v;
     }
   }
-  return [...byHour.values()].sort((a, b) => a.time - b.time);
+  return [...byBucket.values()].sort((a, b) => a.time - b.time);
 }
 
 /**
- * Price history for one item as 7-day hourly OHLC candles from the ingested DB
- * (`/api/history`), falling back to the live session buffer (bucketed to
- * hourly) until the DB has data (e.g. right after a fresh deploy).
+ * Price history for one item as OHLC candles from the ingested DB
+ * (`/api/history`), per timeframe (week = 7d/1h, month = 30d/12h). Falls back
+ * to the live session buffer (bucketed) until the DB has data.
  */
-export function useItemHistory(symbol?: string): ItemHistory {
+export function useItemHistory(symbol?: string, tf: Timeframe = "week"): ItemHistory {
   const session = useHistory((s) => (symbol ? s.series[symbol] : undefined));
   const q = useQuery({
-    queryKey: ["history", symbol],
+    queryKey: ["history", symbol, tf],
     enabled: !!symbol,
     queryFn: async () => {
-      const res = await fetch(`/api/history/${symbol}`);
+      const res = await fetch(`/api/history/${symbol}?tf=${tf}`);
       const json = (await res.json()) as { candles: Candle[] };
       return json.candles ?? [];
     },
@@ -159,14 +164,14 @@ export function useItemHistory(symbol?: string): ItemHistory {
   });
   const db = q.data;
   return useMemo(() => {
-    const candles = db && db.length >= 2 ? db : bucketHourly(session ?? []);
+    const candles = db && db.length >= 2 ? db : bucketCandles(session ?? [], TF_BUCKET[tf]);
     const open = candles[0]?.open ?? 0;
     const last = candles[candles.length - 1]?.close ?? 0;
     const high = candles.length ? Math.max(...candles.map((c) => c.high)) : 0;
     const low = candles.length ? Math.min(...candles.map((c) => c.low)) : 0;
     const change = open > 0 ? (last - open) / open : 0;
     return { candles, open, high, low, last, change };
-  }, [db, session]);
+  }, [db, session, tf]);
 }
 
 /** Market labour rates (min/avg/max wage) — from the snapshot. */
