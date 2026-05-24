@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 /**
  * Last-24h trend for ALL 21 items in one query: hourly close points (for the
  * rail sparklines) + open/high/low (for the chart's 24h stats and % change).
- * The current PRICE is never read from here — it stays live from the 15s
+ * The current PRICE is never read from here — it stays live from the 10s
  * snapshot; this only provides the historical trend.
  *
  * Cached via unstable_cache so the DB isn't hit per user.

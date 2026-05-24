@@ -8,7 +8,7 @@ import { create } from "zustand";
  */
 export type Point = { t: number; v: number };
 
-/** Max points kept per item (~8h at one point / 15s). */
+/** Max points kept per item (~5.5h at one point / 10s). */
 const CAP = 2000;
 
 type HistoryState = {

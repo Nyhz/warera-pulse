@@ -67,7 +67,7 @@ function unwrap(arr: unknown[], i: number): unknown {
 
 // --- Server-side trimming: the raw snapshot is ~174 KB/poll (battles carry
 // hundreds of muOrder ids + unused fields, ranking has 180 rows). The UI uses a
-// small subset, so we strip it here before sending it every 15s. ---
+// small subset, so we strip it here before sending it every 10s. ---
 
 type RawSide = {
   country?: string | null;

@@ -13,7 +13,7 @@ import { gatewayQuery } from "@/lib/gateway";
  * Own route (not in the snapshot batch): batching transactions with other
  * procs is pathologically slow on the gateway; single calls are ~150ms.
  */
-const REVALIDATE = 15;
+const REVALIDATE = 10;
 /** How many of each transaction type to pull before merging by time. */
 const PER_TYPE = 18;
 /** Rows kept after merging both types. */

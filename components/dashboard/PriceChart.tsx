@@ -90,11 +90,11 @@ export function PriceChart({ className = "" }: { className?: string }) {
   const { data: orders } = useTopOrders(item?.symbol ?? "", !!item);
   const { data: sparks } = useDaySparks();
 
-  // Headline price is LIVE (15s snapshot); the chart bars are hourly history.
+  // Headline price is LIVE (10s snapshot); the chart bars are hourly history.
   const livePrice = item?.price ?? 0;
 
   // 24h stats (High/Low/Open) + % change from the ingested DB, with the live
-  // price folded into the extremes so they stay current at 15s.
+  // price folded into the extremes so they stay current at 10s.
   const day = item ? sparks?.[item.symbol] : undefined;
   const open = day?.open ?? 0;
   const high = day ? Math.max(day.high, livePrice) : 0;
@@ -168,7 +168,7 @@ export function PriceChart({ className = "" }: { className?: string }) {
           </div>
           <span
             className="rounded-[2px] bg-up/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] text-up"
-            title="historical candles · live price every 15s"
+            title="historical candles · live price every 10s"
           >
             {tf === "week" ? "7D · 1H" : "30D · 12H"}
           </span>

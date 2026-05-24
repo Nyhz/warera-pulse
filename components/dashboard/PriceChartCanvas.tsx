@@ -19,7 +19,7 @@ import type { Candle } from "@/lib/types";
  * the ~heavy charting lib out of the initial bundle).
  *
  * The full candle set (DB, ~5min cadence) is set with setData when it changes;
- * the live price (15s) updates ONLY the last forming bar via series.update —
+ * the live price (10s) updates ONLY the last forming bar via series.update —
  * no chart rebuild, so the user's zoom/pan and the view are preserved.
  */
 const SMA_PERIOD = 20;

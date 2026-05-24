@@ -16,8 +16,14 @@ import { ECONOMY_ITEMS } from "@/lib/catalog";
 import type { Candle, Item } from "@/lib/types";
 import { useHistory } from "@/lib/store/history";
 
-/** Single client poll cadence — the whole UI refreshes on this interval. */
-const POLL = 15_000;
+/**
+ * Single client poll cadence for the whole live UI. Matched to the server-side
+ * cache revalidate window (10s) on every live route (snapshot, equipment,
+ * transactions, topOrders) so the client never polls slower than the cache
+ * refreshes — i.e. it always gets the freshest cached value, never one a few
+ * seconds stale. Keep these in lockstep.
+ */
+const POLL = 10_000;
 
 export type LiveBattleSide = {
   code: string;
@@ -100,9 +106,9 @@ export function useDaySparks() {
 }
 
 /**
- * The 21 economy resources as UI `Item`s: live price (15s snapshot) + 24h
+ * The 21 economy resources as UI `Item`s: live price (10s snapshot) + 24h
  * sparkline and change from the ingested DB. The live price is appended as the
- * sparkline's last point so its tip and the % change stay live every 15s.
+ * sparkline's last point so its tip and the % change stay live every 10s.
  */
 export function useEconomyItems(): {
   items: Item[];
@@ -119,7 +125,7 @@ export function useEconomyItems(): {
         const price = prices?.[code] ?? 0;
         const day = sparkData?.[code];
         const base = day?.points ?? [];
-        // Append the live price so the sparkline ends "now" and updates at 15s.
+        // Append the live price so the sparkline ends "now" and updates at 10s.
         const spark = price > 0 ? [...base, price] : base;
         const open = day?.open ?? base[0] ?? 0;
         const change = open > 0 && price > 0 ? (price - open) / open : 0;
@@ -438,7 +444,7 @@ export type MarketTx = {
   createdAt: string;
 };
 
-/** Latest item-market fills for the transactions feed (own 15s-cached route). */
+/** Latest item-market fills for the transactions feed (own 10s-cached route). */
 export function useTransactions() {
   return useQuery({
     queryKey: ["transactions"],

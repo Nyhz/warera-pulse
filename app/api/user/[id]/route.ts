@@ -11,7 +11,7 @@ import type { NextRequest } from "next/server";
  *
  * All data is public-by-id and read through the shared server key, so it is
  * cached per-userId via Next's Data Cache (the id is in the URL). Prices are
- * intentionally NOT included — the client derives money/day from the live 15s
+ * intentionally NOT included — the client derives money/day from the live 10s
  * snapshot so it stays current without re-fetching this route.
  */
 const GATEWAY = "https://gateway.warerastats.io/trpc";

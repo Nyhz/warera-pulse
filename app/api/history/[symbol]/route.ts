@@ -8,7 +8,7 @@ import type { Candle } from "@/lib/types";
  * last, high/low = extremes). Timeframe via `?tf`:
  *   week  → 7 days,  1h candles
  *   month → 30 days, 12h candles
- * The live current price keeps coming from the 15s snapshot — this only feeds
+ * The live current price keeps coming from the 10s snapshot — this only feeds
  * the chart's historical bars.
  *
  * Cached via unstable_cache (shared across instances, revalidated periodically)
