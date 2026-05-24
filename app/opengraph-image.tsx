@@ -37,13 +37,28 @@ export default function OgImage() {
           </div>
         </div>
 
-        {/* headline */}
+        {/* headline + call-to-action */}
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.05, maxWidth: 1000 }}>
             Real-time market &amp; conflict terminal
           </div>
           <div style={{ fontSize: 32, color: DIM, maxWidth: 980 }}>
             Live prices, order books, candle charts, battles and hot nations for warera.io
+          </div>
+          <div style={{ display: "flex", marginTop: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                background: ACCENT,
+                color: "#06210d",
+                fontSize: 28,
+                fontWeight: 800,
+                padding: "16px 32px",
+                borderRadius: 10,
+              }}
+            >
+              Open the live terminal →
+            </div>
           </div>
         </div>
 
