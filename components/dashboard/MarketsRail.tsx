@@ -82,7 +82,7 @@ function MilRow({
       </span>
       <span className="truncate text-[11px] font-semibold">{label}</span>
       <span className="font-mono text-[12px] font-bold tabular-nums">
-        {price != null ? formatPrice(price) : loading ? "…" : "—"}
+        {price != null ? formatPrice(price, 2) : loading ? "…" : "—"}
       </span>
     </div>
   );
