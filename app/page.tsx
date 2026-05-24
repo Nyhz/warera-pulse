@@ -9,24 +9,26 @@ import { LiveStatus } from "@/components/dashboard/LiveStatus";
 
 export default function Home() {
   return (
-    <div className="mx-auto flex w-full max-w-[1920px] flex-col lg:h-dvh lg:overflow-hidden">
+    <div className="mx-auto flex w-full max-w-[1920px] flex-col md:h-dvh md:overflow-hidden">
       <Header />
       <Ticker />
 
-      <main className="flex flex-1 flex-col gap-px bg-line lg:grid lg:min-h-0 lg:grid-cols-[248px_1fr_360px]">
+      {/* 3 columns from md (768px) up — narrower sides in the 768–1024 range,
+          full widths at lg+. Below 768px the panels stack (mobile). */}
+      <main className="flex flex-1 flex-col gap-px bg-line md:grid md:min-h-0 md:grid-cols-[180px_minmax(0,1fr)_280px] lg:grid-cols-[248px_minmax(0,1fr)_360px]">
         {/* Left — markets rail (Economy / Military tabs), selects the chart */}
-        <MarketsRail className="order-3 max-h-[360px] lg:order-none lg:max-h-none" />
+        <MarketsRail className="order-3 max-h-[360px] md:order-none md:max-h-none" />
 
         {/* Center — price chart over global feed */}
-        <div className="order-1 flex min-h-0 flex-col gap-px bg-line lg:order-none">
-          <PriceChart className="h-[520px] lg:h-auto lg:min-h-0 lg:flex-[5]" />
-          <Feed className="lg:min-h-0 lg:flex-[2]" />
+        <div className="order-1 flex min-h-0 min-w-0 flex-col gap-px bg-line md:order-none">
+          <PriceChart className="h-[520px] md:h-auto md:min-h-0 md:flex-[5]" />
+          <Feed className="md:min-h-0 md:flex-[2]" />
         </div>
 
         {/* Right — hot nations over active conflicts */}
-        <div className="order-2 flex min-h-0 flex-col gap-px bg-line lg:order-none">
+        <div className="order-2 flex min-h-0 min-w-0 flex-col gap-px bg-line md:order-none">
           <HotNations className="shrink-0" />
-          <Conflicts className="lg:min-h-0 lg:flex-1" />
+          <Conflicts className="md:min-h-0 md:flex-1" />
         </div>
       </main>
 
