@@ -34,6 +34,41 @@ export const ECONOMY_ITEMS: EconItem[] = [
 
 export const ECONOMY_CODES = ECONOMY_ITEMS.map((i) => i.code);
 
+/**
+ * Refining recipes — inputs and production points to make one unit of each
+ * product. From gameConfig.items[code].{productionNeeds,productionPoints}
+ * (stable game data). `points` is the limiting resource, so the Economy tab's
+ * refining calculator ranks by margin per production point.
+ */
+/**
+ * Production points to extract one unit of each raw input (most are 1, but
+ * livestock=20 and fish=40). Needed for the Economy tab's "full chain" mode,
+ * where producing the inputs yourself also costs production points.
+ */
+export const RAW_POINTS: Record<string, number> = {
+  limestone: 1,
+  iron: 1,
+  grain: 1,
+  lead: 1,
+  coca: 1,
+  petroleum: 1,
+  livestock: 20,
+  fish: 40,
+};
+
+export const RECIPES: { code: string; needs: Record<string, number>; points: number }[] = [
+  { code: "oil", needs: { petroleum: 1 }, points: 1 },
+  { code: "concrete", needs: { limestone: 10 }, points: 10 },
+  { code: "steel", needs: { iron: 10 }, points: 10 },
+  { code: "bread", needs: { grain: 10 }, points: 10 },
+  { code: "steak", needs: { livestock: 1 }, points: 20 },
+  { code: "cookedFish", needs: { fish: 1 }, points: 40 },
+  { code: "lightAmmo", needs: { lead: 1 }, points: 1 },
+  { code: "ammo", needs: { lead: 4 }, points: 4 },
+  { code: "heavyAmmo", needs: { lead: 16 }, points: 16 },
+  { code: "cocain", needs: { coca: 200 }, points: 200 },
+];
+
 export type ArmorSlot = "helmet" | "chest" | "pants" | "boots" | "gloves";
 
 /** Weapon tiers T1–T6 (named items, ascending quality). */

@@ -52,6 +52,7 @@ export function Header() {
         />
         <nav className="flex gap-2 border-l border-line pl-3">
           <NavLink href="/" label="Markets" active={pathname === "/"} />
+          <NavLink href="/economy" label="Economy" active={pathname.startsWith("/economy")} />
           <NavLink href="/citizen" label="Citizen" active={pathname.startsWith("/citizen")} />
         </nav>
       </div>

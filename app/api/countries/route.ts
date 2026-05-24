@@ -20,7 +20,12 @@ export type CountryLite = {
   code: string;
   productionBonus: number;
   specializedItem: string | null;
+  incomeTax: number;
+  marketTax: number;
+  development: number;
 };
+
+const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
 export async function GET() {
   const raw = await gatewayQuery<unknown>("country.getAllCountries", undefined, REVALIDATE);
@@ -32,6 +37,8 @@ export async function GET() {
       name?: unknown;
       code?: unknown;
       specializedItem?: unknown;
+      development?: unknown;
+      taxes?: { income?: unknown; market?: unknown };
       strategicResources?: { bonuses?: { productionPercent?: unknown } };
     };
     if (o && typeof o._id === "string") {
@@ -42,6 +49,9 @@ export async function GET() {
         code: typeof o.code === "string" ? o.code : "??",
         productionBonus: typeof pp === "number" && Number.isFinite(pp) ? pp : 0,
         specializedItem: typeof o.specializedItem === "string" ? o.specializedItem : null,
+        incomeTax: n(o.taxes?.income),
+        marketTax: n(o.taxes?.market),
+        development: n(o.development),
       });
     }
   }

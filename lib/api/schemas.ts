@@ -32,6 +32,9 @@ export const CountrySchema = z
     code: z.string(),
     productionBonus: z.number().default(0),
     specializedItem: z.string().nullable().default(null),
+    incomeTax: z.number().default(0),
+    marketTax: z.number().default(0),
+    development: z.number().default(0),
   })
   .loose();
 export type Country = z.infer<typeof CountrySchema>;
