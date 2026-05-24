@@ -5,6 +5,7 @@ import { useFeed } from "@/lib/api/queries";
 import type { Country } from "@/lib/api/schemas";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { Flag } from "@/components/ui/Flag";
+import { formatCompact } from "@/lib/util/format";
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-GB", {
@@ -27,10 +28,11 @@ export function Feed({ className = "" }: { className?: string }) {
   const tag = (id?: string): ReactNode => {
     const c: Country | undefined = id ? countriesById?.get(id) : undefined;
     const code = c?.code?.toUpperCase() ?? "??";
+    const name = c?.name ?? code;
     return (
       <span className="inline-flex items-center gap-1 align-middle">
         <Flag code={code} className="!h-2.5 !w-[14px]" />
-        <b className="font-mono text-[10.5px]">{code}</b>
+        <b className="font-semibold">{name}</b>
       </span>
     );
   };
@@ -80,10 +82,31 @@ export function Feed({ className = "" }: { className?: string }) {
           icon: <span className="text-cyan">🚩</span>,
           msg: <><b>{region(s("region"))}</b> liberated · {tag(s("toCountry"))} from {tag(s("fromCountry"))}</>,
         };
-      case "regionTransfer":
+      case "regionTransfer": {
+        const regs = (d.regions as string[]) ?? [];
+        const cs = (d.countries as string[]) ?? [];
+        const more = regs.length > 1 ? ` (+${regs.length - 1})` : "";
         return {
           icon: <span className="text-amber">🚩</span>,
-          msg: <><b>{region(s("region"))}</b> transferred to {tag(s("toCountry"))}</>,
+          msg: <><b>{region(regs[0])}</b>{more} transferred · {tag(cs[1])} from {tag(cs[0])}</>,
+        };
+      }
+      case "countryMoneyTransfer": {
+        const cs = (d.countries as string[]) ?? [];
+        return {
+          icon: <span className="text-amber">💰</span>,
+          msg: <>{tag(cs[0])} sent <b className="font-mono">{formatCompact(Number(d.money) || 0)}</b> to {tag(cs[1])}</>,
+        };
+      }
+      case "financedRevolt":
+        return {
+          icon: <span className="text-down">✊</span>,
+          msg: <>Revolt financed in <b>{region(s("regionId"))}</b> · {tag(s("revoltingCountryId"))} vs {tag(s("occupyingCountryId"))}</>,
+        };
+      case "bankruptcy":
+        return {
+          icon: <span className="text-down">💸</span>,
+          msg: <>{tag(s("country"))} went bankrupt</>,
         };
       case "depositDiscovered":
         return {
@@ -93,11 +116,11 @@ export function Feed({ className = "" }: { className?: string }) {
       case "newPresident":
         return {
           icon: <span className="text-amber">🏛</span>,
-          msg: <>New president elected in {tag(c[0])}</>,
+          msg: <>New president elected in {tag(s("country") ?? c[0])}</>,
         };
       default:
         return {
-          icon: <span className="text-faint">•</span>,
+          icon: <span>📌</span>,
           msg: <>{humanize(d.type)}{c.length ? <> · {tag(c[0])}{c[1] ? <> {tag(c[1])}</> : null}</> : null}</>,
         };
     }
