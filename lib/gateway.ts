@@ -7,6 +7,14 @@ const API2 = "https://api2.warera.io/trpc";
 const KEY = process.env.WARERA_API_KEY?.trim() || undefined;
 const BASE = process.env.WARERA_API_BASE?.trim() || (KEY ? GATEWAY : API2);
 
+/**
+ * Last successful payload per query URL — a resilience net. The WarEra gateway
+ * occasionally flaps (200-wrapped 503s); rather than blank a panel, we serve the
+ * last good value. Errors are never stored, so they can't poison this fallback.
+ * In-memory (per instance), layered on top of the shared Next Data Cache.
+ */
+const lastGood = new Map<string, unknown>();
+
 /** Fetch one tRPC query and return `result.data`. Uses Next's Data Cache. */
 export async function gatewayQuery<T = unknown>(
   proc: string,
@@ -15,10 +23,21 @@ export async function gatewayQuery<T = unknown>(
 ): Promise<T | null> {
   const url = new URL(`${BASE}/${proc}`);
   if (input !== undefined && input !== null) url.searchParams.set("input", JSON.stringify(input));
+  const key = url.toString();
   const headers: Record<string, string> = { "User-Agent": "WarEraPulse/0.1" };
   if (KEY && BASE !== API2) headers["X-API-Key"] = KEY;
-  const res = await fetch(url, { headers, next: { revalidate } });
-  if (!res.ok) return null;
-  const json = (await res.json()) as { result?: { data?: T } };
-  return json.result?.data ?? null;
+  try {
+    const res = await fetch(url, { headers, next: { revalidate } });
+    if (res.ok) {
+      const json = (await res.json()) as { result?: { data?: T }; error?: unknown };
+      const data = json.error ? null : (json.result?.data ?? null);
+      if (data != null) {
+        lastGood.set(key, data);
+        return data;
+      }
+    }
+  } catch {
+    // fall through to last-good
+  }
+  return (lastGood.get(key) as T) ?? null;
 }

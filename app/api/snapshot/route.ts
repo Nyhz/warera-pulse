@@ -147,8 +147,29 @@ function leanRanking(raw: unknown): unknown {
   };
 }
 
+/**
+ * Last good value per snapshot field — resilience against gateway flaps. Each
+ * field falls back independently, so one erroring proc never blanks a panel
+ * that still has good data. Errors are never stored. In-memory per instance.
+ */
+const lastGoodSnapshot: Partial<Record<keyof Snapshot, unknown>> = {};
+
+function mergeLastGood(fresh: Snapshot): Snapshot {
+  const out = { ...EMPTY };
+  for (const k of Object.keys(fresh) as (keyof Snapshot)[]) {
+    const v = fresh[k];
+    if (v != null) {
+      lastGoodSnapshot[k] = v;
+      (out as Record<string, unknown>)[k] = v;
+    } else {
+      (out as Record<string, unknown>)[k] = lastGoodSnapshot[k] ?? null;
+    }
+  }
+  return out;
+}
+
 export async function GET() {
-  let arr: unknown[];
+  let arr: unknown[] | null = null;
   try {
     arr = await fetchBatch(BASE);
   } catch {
@@ -156,18 +177,23 @@ export async function GET() {
     try {
       arr = await fetchBatch(API2);
     } catch {
-      return Response.json(EMPTY, { status: 502 });
+      arr = null;
     }
   }
 
-  const snapshot: Snapshot = {
-    prices: unwrap(arr, 0) as Record<string, number> | null,
-    battles: leanBattles(unwrap(arr, 1)),
-    events: unwrap(arr, 2),
-    ranking: leanRanking(unwrap(arr, 3)),
-    wage: unwrap(arr, 4),
-    dates: unwrap(arr, 5),
-  };
+  const fresh: Snapshot = arr
+    ? {
+        prices: unwrap(arr, 0) as Record<string, number> | null,
+        battles: leanBattles(unwrap(arr, 1)),
+        events: unwrap(arr, 2),
+        ranking: leanRanking(unwrap(arr, 3)),
+        wage: unwrap(arr, 4),
+        dates: unwrap(arr, 5),
+      }
+    : EMPTY;
+
+  // Serve fresh fields, backfilling any that errored with the last good value.
+  const snapshot = mergeLastGood(fresh);
 
   return Response.json(snapshot, {
     headers: {
