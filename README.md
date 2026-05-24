@@ -6,7 +6,7 @@ A Bloomberg/TradingView-style dashboard that turns the game's economy and wars i
 single live terminal: resource prices, order books, candle charts, equipment prices,
 active battles and the nations on the rise — all updating in real time.
 
-🔗 **Live:** https://warera-pulse.vercel.app
+🔗 **Live:** https://www.warera-pulse.info
 
 ## Features
 

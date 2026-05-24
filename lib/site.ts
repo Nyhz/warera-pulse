@@ -1,9 +1,6 @@
 /** Canonical site metadata shared by layout, OG image, robots and sitemap. */
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : "https://warera-pulse.vercel.app");
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.warera-pulse.info";
 
 export const SITE_NAME = "WarEra Pulse";
 
