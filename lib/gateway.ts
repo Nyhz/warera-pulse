@@ -37,7 +37,26 @@ export async function gatewayQuery<T = unknown>(
       }
     }
   } catch {
-    // fall through to last-good
+    // fall through
   }
-  return (lastGood.get(key) as T) ?? null;
+
+  // Cached/transient error. Prefer the last good value; if we have none, the
+  // shared Data Cache may be holding a stale error — bootstrap with one fresh,
+  // uncached fetch so a recovered gateway isn't masked for the whole TTL.
+  const cached = lastGood.get(key) as T | undefined;
+  if (cached != null) return cached;
+  try {
+    const res = await fetch(url, { headers, cache: "no-store" });
+    if (res.ok) {
+      const json = (await res.json()) as { result?: { data?: T }; error?: unknown };
+      const data = json.error ? null : (json.result?.data ?? null);
+      if (data != null) {
+        lastGood.set(key, data);
+        return data;
+      }
+    }
+  } catch {
+    // fall through
+  }
+  return null;
 }

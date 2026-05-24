@@ -148,71 +148,130 @@ function Refining({ prices, className = "" }: { prices: Record<string, number>; 
 
 type Sort = "bonus" | "dev" | "tax";
 
+/** Combined production bonus for making `resource` in a country (base + the
+ * +30% specialization when the country specializes in that resource). */
+const SPECIALIZATION_BONUS = 30;
+
 function Nations({ countries, className = "" }: { countries: Country[]; className?: string }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("bonus");
+  const [resource, setResource] = useState(""); // "" = base bonus (any)
 
-  const rows = useMemo(() => {
+  // Resources some country specializes in — the ones where picking a target
+  // actually changes the ranking.
+  const resourceOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const c of countries) if (c.specializedItem) s.add(c.specializedItem);
+    return [...s].sort((a, b) => itemName(a).localeCompare(itemName(b)));
+  }, [countries]);
+
+  // The active metric drives the value, the bar and the sort together.
+  const metricOf = (c: Country) => {
+    if (sort === "dev") return c.development ?? 0;
+    if (sort === "tax") return c.incomeTax ?? 0;
+    return (c.productionBonus ?? 0) + (resource && c.specializedItem === resource ? SPECIALIZATION_BONUS : 0);
+  };
+
+  const { rows, min, max } = useMemo(() => {
     const term = q.trim().toLowerCase();
     const filtered = term ? countries.filter((c) => c.name.toLowerCase().includes(term)) : countries;
-    return [...filtered].sort((a, b) => {
-      if (sort === "tax") return (a.incomeTax ?? 0) - (b.incomeTax ?? 0);
-      if (sort === "dev") return (b.development ?? 0) - (a.development ?? 0);
-      return (b.productionBonus ?? 0) - (a.productionBonus ?? 0);
-    });
-  }, [countries, q, sort]);
+    const sorted = [...filtered].sort((a, b) => metricOf(b) - metricOf(a));
+    const vals = countries.map(metricOf);
+    return {
+      rows: sorted,
+      min: vals.length ? Math.min(...vals) : 0,
+      max: vals.length ? Math.max(...vals) : 1,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countries, q, sort, resource]);
 
-  const bonuses = countries.map((c) => c.productionBonus ?? 0);
-  const min = bonuses.length ? Math.min(...bonuses) : 0;
-  const max = bonuses.length ? Math.max(...bonuses) : 1;
+  const label =
+    sort === "dev"
+      ? "development"
+      : sort === "tax"
+        ? "income tax"
+        : resource
+          ? `${itemName(resource)} bonus`
+          : "prod bonus";
+  const fmt = (v: number) =>
+    sort === "dev" ? String(Math.round(v)) : sort === "tax" ? `${pct(v)}%` : `+${pct(v)}%`;
 
-  const SortBtn = ({ k, label }: { k: Sort; label: string }) => (
+  const SortBtn = ({ k, lbl }: { k: Sort; lbl: string }) => (
     <button
       type="button"
       onClick={() => setSort(k)}
-      className={`rounded-[3px] border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] transition-colors ${
+      className={`shrink-0 rounded-[3px] border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] transition-colors ${
         sort === k ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-dim hover:text-txt"
       }`}
     >
-      {label}
+      {lbl}
     </button>
   );
 
   return (
     <Panel className={`flex h-[460px] flex-col overflow-hidden lg:h-auto lg:min-h-0 ${className}`}>
       <PanelHead title="Nations Economy" meta={`${rows.length} of ${countries.length}`} />
-      <div className="flex h-[44px] shrink-0 items-center gap-2 border-b border-line px-3">
+      <div className="flex h-[44px] shrink-0 items-center gap-2 overflow-x-auto border-b border-line px-3">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search country…"
-          className="w-[150px] rounded-[3px] border border-line bg-panel2 px-2.5 py-1.5 text-[11px] text-txt outline-none focus:border-dim"
+          placeholder="Search…"
+          className="w-[110px] shrink-0 rounded-[3px] border border-line bg-panel2 px-2.5 py-1.5 text-[11px] text-txt outline-none focus:border-dim"
         />
-        <div className="ml-auto flex gap-1.5">
-          <SortBtn k="bonus" label="Bonus" />
-          <SortBtn k="dev" label="Dev" />
-          <SortBtn k="tax" label="Tax" />
+        {sort === "bonus" ? (
+          <select
+            value={resource}
+            onChange={(e) => {
+              setResource(e.target.value);
+              if (e.target.value) setSort("bonus");
+            }}
+            title="Rank by combined bonus for producing this resource"
+            className="shrink-0 rounded-[3px] border border-line bg-panel2 px-2 py-1.5 text-[11px] text-txt outline-none focus:border-dim"
+          >
+            <option value="">Bonus: any</option>
+            {resourceOptions.map((code) => (
+              <option key={code} value={code}>
+                Bonus: {itemName(code)}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        <div className="ml-auto flex shrink-0 gap-1.5">
+          <SortBtn k="bonus" lbl="Bonus" />
+          <SortBtn k="dev" lbl="Dev" />
+          <SortBtn k="tax" lbl="Tax" />
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
-        {rows.map((c, i) => (
-          <BarRow
-            key={c._id}
-            rank={i + 1}
-            icon={<Flag code={c.code.toUpperCase()} className="!h-4 !w-[22px]" />}
-            name={c.name}
-            sub={
-              <>
-                {c.specializedItem ? `${itemName(c.specializedItem)} · ` : ""}tax {c.incomeTax ?? 0}% ·
-                dev {Math.round(c.development ?? 0)}
-              </>
-            }
-            value={`+${pct(c.productionBonus ?? 0)}%`}
-            label="prod bonus"
-            width={barWidth(c.productionBonus ?? 0, min, max)}
-            accent="cyan"
-          />
-        ))}
+        {rows.map((c, i) => {
+          const isTarget = !!resource && c.specializedItem === resource;
+          return (
+            <BarRow
+              key={c._id}
+              rank={i + 1}
+              icon={<Flag code={c.code.toUpperCase()} className="!h-4 !w-[22px]" />}
+              name={c.name}
+              sub={
+                <>
+                  {c.specializedItem ? (
+                    <>
+                      <span className={isTarget ? "font-bold text-up" : ""}>
+                        {itemName(c.specializedItem)}
+                        {isTarget ? " +30%" : ""}
+                      </span>
+                      {" · "}
+                    </>
+                  ) : null}
+                  tax {c.incomeTax ?? 0}% · dev {Math.round(c.development ?? 0)}
+                </>
+              }
+              value={fmt(metricOf(c))}
+              label={label}
+              width={barWidth(metricOf(c), min, max)}
+              accent="cyan"
+            />
+          );
+        })}
       </div>
     </Panel>
   );
