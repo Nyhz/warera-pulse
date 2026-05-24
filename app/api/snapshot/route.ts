@@ -21,7 +21,9 @@ const REVALIDATE = 10;
 
 const PROCS: { proc: string; input: unknown }[] = [
   { proc: "itemTrading.getPrices", input: {} },
-  { proc: "battle.getBattles", input: { isActive: true, limit: 10 } },
+  // Fetch all active battles (not just 10) — getBattles isn't ordered by
+  // damage, so a low limit can drop a high-damage fight from Hot Conflicts.
+  { proc: "battle.getBattles", input: { isActive: true, limit: 40 } },
   { proc: "event.getEventsPaginated", input: { limit: 30 } },
   { proc: "ranking.getRanking", input: { rankingType: "weeklyCountryDamages" } },
   { proc: "workOffer.getWageStats", input: { energy: 100, production: 100, citizenship: "" } },
