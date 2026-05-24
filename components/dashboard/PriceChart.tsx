@@ -195,20 +195,74 @@ export function PriceChart({ className = "" }: { className?: string }) {
           </div>
         </div>
 
-        <div className="mt-2.5 min-h-0 flex-1">
-          {!ready ? (
-            <div className="flex h-full items-center justify-center px-6 text-center font-mono text-[12px] text-faint">
-              Accruing price history…
+        {/* chart + vertical depth ladder side by side (chart keeps the height) */}
+        <div className="mt-2.5 flex min-h-0 flex-1 gap-3">
+          <div className="min-h-0 flex-1">
+            {!ready ? (
+              <div className="flex h-full items-center justify-center px-6 text-center font-mono text-[12px] text-faint">
+                Accruing price history…
+              </div>
+            ) : (
+              <Chart
+                candles={rawCandles}
+                livePrice={livePrice}
+                decimals={decimals}
+                showSMA={showSMA}
+                showEMA={showEMA}
+              />
+            )}
+          </div>
+
+          {/* order book: asks above the spread, bids below */}
+          <div className="hidden w-[190px] shrink-0 flex-col overflow-hidden rounded-[3px] border border-line lg:flex">
+            <div className="flex items-center justify-between border-b border-line bg-panel2 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em]">
+              <span className="text-up">Bids {buy}%</span>
+              <span className="text-down">{sell}% Asks</span>
             </div>
-          ) : (
-            <Chart
-              candles={rawCandles}
-              livePrice={livePrice}
-              decimals={decimals}
-              showSMA={showSMA}
-              showEMA={showEMA}
-            />
-          )}
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {bids.length === 0 && asks.length === 0 ? (
+                <div className="px-2 py-8 text-center font-mono text-[10px] text-faint">No orders</div>
+              ) : (
+                <>
+                  {[...asks].reverse().map((o, i) => (
+                    <div key={`a${i}`} className="relative flex items-center justify-between px-2 py-[2.5px]">
+                      <span
+                        className="absolute inset-y-0 left-0 bg-down/12"
+                        style={{ width: `${(o.quantity / maxQty) * 100}%` }}
+                        aria-hidden
+                      />
+                      <span className="relative z-10 font-mono text-[10.5px] font-bold tabular-nums text-down">
+                        {formatPrice(o.price, decimals)}
+                      </span>
+                      <span className="relative z-10 font-mono text-[9.5px] tabular-nums text-dim">
+                        {formatCompact(o.quantity)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="border-y border-line bg-panel2 px-2 py-1 text-center font-mono text-[9px] text-faint">
+                    {spread != null
+                      ? `spread ${formatPrice(spread, decimals)}${spreadPct != null ? ` · ${spreadPct.toFixed(2)}%` : ""}`
+                      : "—"}
+                  </div>
+                  {bids.map((o, i) => (
+                    <div key={`b${i}`} className="relative flex items-center justify-between px-2 py-[2.5px]">
+                      <span
+                        className="absolute inset-y-0 left-0 bg-up/12"
+                        style={{ width: `${(o.quantity / maxQty) * 100}%` }}
+                        aria-hidden
+                      />
+                      <span className="relative z-10 font-mono text-[10.5px] font-bold tabular-nums text-up">
+                        {formatPrice(o.price, decimals)}
+                      </span>
+                      <span className="relative z-10 font-mono text-[9.5px] tabular-nums text-dim">
+                        {formatCompact(o.quantity)}
+                      </span>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* deep-link to the in-game market for this resource */}
@@ -229,62 +283,6 @@ export function PriceChart({ className = "" }: { className?: string }) {
           >
             Sell <span aria-hidden>↗</span>
           </a>
-        </div>
-
-        <div className="mt-2.5 flex shrink-0 flex-col">
-          <div className="flex items-center justify-between px-1 pb-1 text-[8px] font-bold uppercase tracking-[0.12em]">
-            <span className="text-up">Bids · {buy}%</span>
-            <span className="font-mono text-faint">
-              {spread != null
-                ? `spread ${formatPrice(spread, decimals)}${spreadPct != null ? ` · ${spreadPct.toFixed(2)}%` : ""}`
-                : "order book"}
-            </span>
-            <span className="text-down">{sell}% · Asks</span>
-          </div>
-          <div className="grid grid-cols-2 gap-px">
-            <div className="flex flex-col gap-px">
-              {bids.length === 0 ? (
-                <div className="px-1.5 py-[3px] font-mono text-[10px] text-faint">—</div>
-              ) : (
-                bids.map((o, i) => (
-                  <div key={i} className="relative flex items-center justify-between px-1.5 py-[2.5px]">
-                    <span
-                      className="absolute inset-y-0 right-0 rounded-[1px] bg-up/12"
-                      style={{ width: `${(o.quantity / maxQty) * 100}%` }}
-                      aria-hidden
-                    />
-                    <span className="relative z-10 font-mono text-[10.5px] font-bold tabular-nums text-up">
-                      {formatPrice(o.price, decimals)}
-                    </span>
-                    <span className="relative z-10 font-mono text-[10px] tabular-nums text-dim">
-                      {formatCompact(o.quantity)}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="flex flex-col gap-px">
-              {asks.length === 0 ? (
-                <div className="px-1.5 py-[3px] text-right font-mono text-[10px] text-faint">—</div>
-              ) : (
-                asks.map((o, i) => (
-                  <div key={i} className="relative flex items-center justify-between px-1.5 py-[2.5px]">
-                    <span
-                      className="absolute inset-y-0 left-0 rounded-[1px] bg-down/12"
-                      style={{ width: `${(o.quantity / maxQty) * 100}%` }}
-                      aria-hidden
-                    />
-                    <span className="relative z-10 font-mono text-[10px] tabular-nums text-dim">
-                      {formatCompact(o.quantity)}
-                    </span>
-                    <span className="relative z-10 font-mono text-[10.5px] font-bold tabular-nums text-down">
-                      {formatPrice(o.price, decimals)}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </Panel>

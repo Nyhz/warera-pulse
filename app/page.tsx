@@ -19,7 +19,7 @@ export default function Home() {
 
         {/* Center — price chart over global feed */}
         <div className="order-1 flex min-h-0 flex-col gap-px bg-line lg:order-none">
-          <PriceChart className="h-[480px] lg:h-auto lg:min-h-0 lg:flex-[3]" />
+          <PriceChart className="h-[520px] lg:h-auto lg:min-h-0 lg:flex-[5]" />
           <Feed className="lg:min-h-0 lg:flex-[2]" />
         </div>
 
