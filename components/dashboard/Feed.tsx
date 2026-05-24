@@ -34,7 +34,7 @@ export function Feed({ className = "" }: { className?: string }) {
       </span>
     );
   };
-  const region = (id?: string) => (id && regionsById?.get(id)) || "a region";
+  const region = (id?: string) => (id && regionsById?.get(id)?.name) || "a region";
 
   function render(e: (typeof events)[number]): { icon: ReactNode; msg: ReactNode } {
     const d = e.data as Record<string, unknown> & { type: string };

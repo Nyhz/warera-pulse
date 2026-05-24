@@ -239,13 +239,15 @@ export function useCountries() {
   });
 }
 
-/** All regions, indexed by id → display name (server-trimmed map). */
+export type RegionInfo = { name: string; countryCode: string; countryId: string | null };
+
+/** All regions, indexed by id → { name, countryCode, development }. */
 export function useRegions() {
   return useQuery({
     queryKey: ["regions"],
     queryFn: async () => {
       const res = await fetch("/api/regions");
-      const obj = (await res.json()) as Record<string, string>;
+      const obj = (await res.json()) as Record<string, RegionInfo>;
       return new Map(Object.entries(obj));
     },
     staleTime: 30 * 60_000,
@@ -290,7 +292,7 @@ export function useLiveBattles(): {
         const regionId = b.defender.region ?? b.attacker.region;
         return {
           id: b._id,
-          region: regionId ? regionById?.get(regionId) : undefined,
+          region: regionId ? regionById?.get(regionId)?.name : undefined,
           attacker: {
             ...aMeta,
             damage: aDmg,
@@ -353,7 +355,7 @@ export function useHotNations(limit = 6): {
 export function useFeed(): {
   events: WrEvent[];
   countriesById?: Map<string, Country>;
-  regionsById?: Map<string, string>;
+  regionsById?: Map<string, RegionInfo>;
   isLoading: boolean;
   isError: boolean;
 } {
@@ -373,6 +375,69 @@ export function useFeed(): {
     isLoading: q.isLoading,
     isError: q.isError,
   };
+}
+
+export type CitizenWealth = {
+  companies: number;
+  items: number;
+  money: number;
+  equipments: number;
+  weapons: number;
+  total: number;
+};
+export type CitizenCompany = {
+  id: string;
+  name: string;
+  itemCode: string;
+  production: number;
+  levels: { automatedEngine: number; storage: number; breakRoom: number };
+  workerCount: number;
+  wageTotal: number;
+  estimatedValue: number;
+  regionId: string | null;
+  disabled: boolean;
+};
+export type CitizenSkills = {
+  companies: number;
+  production: number;
+  entrepreneurship: number;
+  management: number;
+  energy: number;
+};
+export type Citizen = {
+  user: {
+    id: string;
+    username: string;
+    level: number;
+    isPremium: boolean;
+    premiumMonths: number;
+    militaryRank: number;
+    countryId: string | null;
+    avatarUrl: string | null;
+    worksCount: number;
+    skills: CitizenSkills;
+    wealth: CitizenWealth;
+    estimatedWealth: number;
+    wealthRank: { rank: number; tier: string | null };
+    damageRank: { rank: number; tier: string | null };
+  };
+  companies: CitizenCompany[];
+};
+
+/** Per-citizen economic snapshot (identity, net worth, owned companies). */
+export function useCitizen(userId?: string) {
+  return useQuery({
+    queryKey: ["citizen", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<Citizen> => {
+      const res = await fetch(`/api/user/${userId}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error ?? `Failed to load ${userId}`);
+      return json as Citizen;
+    },
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  });
 }
 
 /** Best buy/sell orders for one resource (for spread + BUY/SELL pressure). */

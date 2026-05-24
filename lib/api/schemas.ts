@@ -24,9 +24,15 @@ export const WageStatsSchema = z
   })
   .loose();
 
-/** country.getAllCountries → we only need id/name/code. */
+/** country.getAllCountries → id/name/code + production-bonus inputs. */
 export const CountrySchema = z
-  .object({ _id: z.string(), name: z.string(), code: z.string() })
+  .object({
+    _id: z.string(),
+    name: z.string(),
+    code: z.string(),
+    productionBonus: z.number().default(0),
+    specializedItem: z.string().nullable().default(null),
+  })
   .loose();
 export type Country = z.infer<typeof CountrySchema>;
 

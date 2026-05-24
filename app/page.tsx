@@ -1,16 +1,14 @@
-import { Header } from "@/components/dashboard/Header";
+import { AppShell } from "@/components/dashboard/AppShell";
 import { Ticker } from "@/components/dashboard/Ticker";
 import { MarketsRail } from "@/components/dashboard/MarketsRail";
 import { PriceChart } from "@/components/dashboard/PriceChart";
 import { HotNations } from "@/components/dashboard/HotNations";
 import { Conflicts } from "@/components/dashboard/Conflicts";
 import { Feed } from "@/components/dashboard/Feed";
-import { LiveStatus } from "@/components/dashboard/LiveStatus";
 
 export default function Home() {
   return (
-    <div className="mx-auto flex w-full max-w-[1920px] flex-col lg:h-dvh lg:overflow-hidden">
-      <Header />
+    <AppShell fill>
       <Ticker />
 
       {/* Mobile (<768px): stacked — chart, then markets rail (so you can switch
@@ -36,12 +34,6 @@ export default function Home() {
         {/* Global feed — full-width bottom row at md, col 2 row 2 at lg, last on mobile */}
         <Feed className="order-4 h-[420px] min-w-0 md:[grid-column:1/3] md:[grid-row:3] lg:[grid-column:2] lg:[grid-row:2] lg:h-auto lg:min-h-0" />
       </main>
-
-      <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-line px-4 py-2.5 text-[10.5px] tracking-[0.04em] text-faint">
-        <LiveStatus />
-        <span>Powered by the WarEra Gateway · supported by warerastats.io</span>
-        <span className="w-[44px]" aria-hidden />
-      </footer>
-    </div>
+    </AppShell>
   );
 }

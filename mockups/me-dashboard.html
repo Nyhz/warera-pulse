@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WarEra Pulse — Citizen Dashboard (mockup)</title>
+<style>
+  :root {
+    --bg: #070a0f; --panel: #0b0f17; --panel2: #0d121c; --line: #1a2230;
+    --txt: #c8d2e0; --dim: #6b7888; --faint: #3d4757;
+    --up: #3fb950; --down: #f85149; --amber: #d29922; --cyan: #39c0d3; --accent: #3fb950;
+    --mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, monospace;
+    --sans: "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--txt); font-family: var(--sans); font-size: 13px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 16px; }
+
+  /* ---- top app bar (matches the terminal header) ---- */
+  .appbar { display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--line); padding:0 4px 12px; }
+  .brand { font-weight:800; letter-spacing:.14em; font-size:13px; text-transform:uppercase; }
+  .brand .pulse { color: var(--accent); }
+  .nav { display:flex; gap:2px; margin-left:8px; }
+  .nav a { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); padding:5px 10px; border-radius:3px; text-decoration:none; }
+  .nav a.active { color:var(--txt); background:var(--panel2); border:1px solid var(--line); }
+  .idform { margin-left:auto; display:flex; gap:6px; align-items:center; }
+  .idform input { background:var(--panel); border:1px solid var(--line); color:var(--txt); font-family:var(--mono); font-size:11px; padding:6px 9px; border-radius:3px; width:300px; }
+  .idform button { background:var(--accent); color:#04130a; border:0; font-weight:700; font-size:11px; letter-spacing:.06em; padding:6px 12px; border-radius:3px; cursor:pointer; }
+
+  /* ---- identity strip ---- */
+  .identity { display:flex; align-items:center; gap:14px; padding:14px 4px; border-bottom:1px solid var(--line); }
+  .avatar { width:46px; height:46px; border-radius:4px; border:1px solid var(--line); background:linear-gradient(135deg,#11304a,#0b0f17); display:grid; place-items:center; font-weight:800; color:var(--cyan); font-size:18px; }
+  .who { display:flex; flex-direction:column; gap:3px; }
+  .who .name { font-size:16px; font-weight:700; letter-spacing:.02em; }
+  .badges { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; font-weight:700; padding:3px 7px; border-radius:2px; border:1px solid var(--line); color:var(--dim); }
+  .chip.prem { color:var(--amber); border-color:rgba(210,153,34,.4); background:rgba(210,153,34,.08); }
+  .chip.diamond { color:var(--cyan); border-color:rgba(57,192,211,.4); background:rgba(57,192,211,.08); }
+  .chip.master { color:var(--accent); border-color:rgba(63,185,80,.4); background:rgba(63,185,80,.08); }
+  .idstats { margin-left:auto; display:flex; gap:26px; }
+  .idstat { text-align:right; }
+  .idstat .k { font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+  .idstat .v { font-family:var(--mono); font-size:15px; font-weight:700; }
+
+  /* ---- grid ---- */
+  .grid { display:grid; grid-template-columns: 1.15fr .85fr; gap:1px; background:var(--line); margin-top:1px; }
+  @media (max-width:880px){ .grid{ grid-template-columns:1fr; } }
+  .panel { background:var(--panel); }
+  .phead { display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--line); padding:9px 14px; }
+  .phead .t { font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); }
+  .phead .m { margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--faint); }
+  .pbody { padding:14px; }
+
+  /* net worth */
+  .nw-total { font-family:var(--mono); font-size:30px; font-weight:800; letter-spacing:-.5px; }
+  .nw-total .c { color:var(--amber); }
+  .nw-sub { font-size:11px; color:var(--dim); margin-top:2px; }
+  .bar { display:flex; height:10px; border-radius:2px; overflow:hidden; margin:16px 0 14px; border:1px solid var(--line); }
+  .bar i { display:block; height:100%; }
+  .legend { display:grid; grid-template-columns:1fr 1fr; gap:8px 18px; }
+  .legrow { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .dot { width:8px; height:8px; border-radius:2px; flex:0 0 auto; }
+  .legrow .lbl { color:var(--dim); }
+  .legrow .val { margin-left:auto; font-family:var(--mono); font-weight:700; }
+
+  /* stat tiles */
+  .tiles { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); }
+  .tile { background:var(--panel); padding:13px 14px; }
+  .tile .k { font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+  .tile .v { font-family:var(--mono); font-size:17px; font-weight:700; margin-top:4px; }
+  .tile .v.up { color:var(--up); }
+  .tile .sub { font-size:10px; color:var(--dim); margin-top:1px; }
+
+  /* companies table */
+  .tbl { width:100%; border-collapse:collapse; }
+  .tbl th { text-align:left; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:600; padding:8px 14px; border-bottom:1px solid var(--line); }
+  .tbl th.r, .tbl td.r { text-align:right; }
+  .tbl td { padding:9px 14px; border-bottom:1px solid var(--line); font-size:12px; }
+  .tbl tr:last-child td { border-bottom:0; }
+  .cname { font-weight:600; }
+  .cprod { display:inline-block; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--cyan); border:1px solid rgba(57,192,211,.3); background:rgba(57,192,211,.07); padding:2px 6px; border-radius:2px; }
+  .mono { font-family:var(--mono); }
+  .lv { font-family:var(--mono); font-size:11px; color:var(--dim); }
+  .lv b { color:var(--txt); font-weight:700; }
+  .money { color:var(--up); font-weight:700; }
+  .disabled td { opacity:.42; }
+  .tag-off { font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--down); border:1px solid rgba(248,81,73,.35); padding:1px 5px; border-radius:2px; }
+  .tfoot td { padding:11px 14px; border-top:1px solid var(--line); font-size:12px; background:var(--panel2); }
+  .tfoot .money { font-size:14px; }
+  .note { font-size:10px; color:var(--faint); padding:10px 14px 0; }
+  .full { grid-column:1 / -1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="appbar">
+    <div class="brand">WAR<span class="pulse">ERA</span> PULSE</div>
+    <nav class="nav">
+      <a href="#">Markets</a>
+      <a href="#" class="active">Citizen</a>
+    </nav>
+    <form class="idform" onsubmit="return false">
+      <input value="6813fb6e7df60827954a754a" placeholder="WarEra user ID or profile URL…" />
+      <button>Load</button>
+    </form>
+  </div>
+
+  <div class="identity">
+    <div class="avatar">G</div>
+    <div class="who">
+      <div class="name">Guepo</div>
+      <div class="badges">
+        <span class="chip">LVL 48</span>
+        <span class="chip prem">Premium · 9mo</span>
+        <span class="chip">Mil. Rank 97</span>
+        <span class="chip master">Damage #8 · Master</span>
+      </div>
+    </div>
+    <div class="idstats">
+      <div class="idstat"><div class="k">Net worth rank</div><div class="v" style="color:var(--cyan)">#175</div></div>
+      <div class="idstat"><div class="k">Works</div><div class="v">8,906</div></div>
+      <div class="idstat"><div class="k">Companies skill</div><div class="v">Lv 4</div></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- NET WORTH -->
+    <section class="panel">
+      <div class="phead"><span class="t">Net Worth</span><span class="m">DIAMOND TIER</span></div>
+      <div class="pbody">
+        <div class="nw-total"><span class="c">$</span>46,918.88</div>
+        <div class="nw-sub">Estimated total wealth · in-game currency</div>
+        <div class="bar">
+          <i style="width:61.8%; background:var(--accent)"></i>
+          <i style="width:20.7%; background:var(--cyan)"></i>
+          <i style="width:8.6%; background:var(--amber)"></i>
+          <i style="width:7.0%; background:#7d5fd0"></i>
+          <i style="width:1.9%; background:var(--down)"></i>
+        </div>
+        <div class="legend">
+          <div class="legrow"><span class="dot" style="background:var(--accent)"></span><span class="lbl">Companies</span><span class="val">28,987</span></div>
+          <div class="legrow"><span class="dot" style="background:var(--cyan)"></span><span class="lbl">Equipments</span><span class="val">9,693</span></div>
+          <div class="legrow"><span class="dot" style="background:var(--amber)"></span><span class="lbl">Items</span><span class="val">4,023</span></div>
+          <div class="legrow"><span class="dot" style="background:#7d5fd0"></span><span class="lbl">Weapons</span><span class="val">3,306</span></div>
+          <div class="legrow"><span class="dot" style="background:var(--down)"></span><span class="lbl">Money</span><span class="val">910</span></div>
+          <div class="legrow"><span class="lbl" style="color:var(--faint)">—</span><span class="val" style="color:var(--faint)"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KEY STATS -->
+    <section class="panel">
+      <div class="phead"><span class="t">Snapshot</span></div>
+      <div class="tiles">
+        <div class="tile"><div class="k">Money on hand</div><div class="v">910</div><div class="sub">liquid currency</div></div>
+        <div class="tile"><div class="k">Est. income / day</div><div class="v up">+91.80</div><div class="sub">active production × price</div></div>
+        <div class="tile"><div class="k">Companies</div><div class="v">10</div><div class="sub">6 active · 4 disabled</div></div>
+        <div class="tile"><div class="k">Companies value</div><div class="v">28,987</div><div class="sub">62% of net worth</div></div>
+      </div>
+    </section>
+
+    <!-- COMPANIES -->
+    <section class="panel full">
+      <div class="phead"><span class="t">Companies</span><span class="m">PRODUCTION · LEVELS · DAILY OUTPUT</span></div>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Produces</th>
+            <th class="r">Prod / day</th>
+            <th class="r">Price</th>
+            <th class="r">Money / day</th>
+            <th class="r">Levels (E/S/B)</th>
+            <th class="r">Est. value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cname">Concrete 2</td><td><span class="cprod">Concrete</span></td>
+            <td class="r mono">27.05</td><td class="r mono">1.637</td><td class="r mono money">44.27</td>
+            <td class="r lv">E<b>7</b> S<b>3</b> B<b>—</b></td><td class="r mono">2,068</td>
+          </tr>
+          <tr>
+            <td class="cname">Concrete 1</td><td><span class="cprod">Concrete</span></td>
+            <td class="r mono">24.90</td><td class="r mono">1.637</td><td class="r mono money">40.76</td>
+            <td class="r lv">E<b>7</b> S<b>3</b> B<b>—</b></td><td class="r mono">2,968</td>
+          </tr>
+          <tr>
+            <td class="cname">Limestone 2</td><td><span class="cprod">Limestone</span></td>
+            <td class="r mono">23.05</td><td class="r mono">0.080</td><td class="r mono money">1.84</td>
+            <td class="r lv">E<b>7</b> S<b>3</b> B<b>—</b></td><td class="r mono">2,886</td>
+          </tr>
+          <tr>
+            <td class="cname">Limestone 1</td><td><span class="cprod">Limestone</span></td>
+            <td class="r mono">22.93</td><td class="r mono">0.080</td><td class="r mono money">1.82</td>
+            <td class="r lv">E<b>7</b> S<b>3</b> B<b>2</b></td><td class="r mono">2,739</td>
+          </tr>
+          <tr>
+            <td class="cname">y</td><td><span class="cprod">Iron</span></td>
+            <td class="r mono">18.71</td><td class="r mono">0.083</td><td class="r mono money">1.56</td>
+            <td class="r lv">E<b>7</b> S<b>3</b> B<b>—</b></td><td class="r mono">2,068</td>
+          </tr>
+          <tr>
+            <td class="cname">z</td><td><span class="cprod">Iron</span></td>
+            <td class="r mono">18.68</td><td class="r mono">0.083</td><td class="r mono money">1.55</td>
+            <td class="r lv">E<b>7</b> S<b>3</b> B<b>—</b></td><td class="r mono">2,068</td>
+          </tr>
+          <tr class="disabled">
+            <td class="cname">Self-Prod Main <span class="tag-off">off</span></td><td><span class="cprod">Steel</span></td>
+            <td class="r mono">1.00</td><td class="r mono">1.603</td><td class="r mono">1.61</td>
+            <td class="r lv">E<b>7</b> S<b>3</b> B<b>1</b></td><td class="r mono">2,804</td>
+          </tr>
+          <tr class="disabled">
+            <td class="cname">s <span class="tag-off">off</span></td><td><span class="cprod">Iron</span></td>
+            <td class="r mono">0.13</td><td class="r mono">0.083</td><td class="r mono">0.01</td>
+            <td class="r lv">E<b>7</b> S<b>4</b> B<b>—</b></td><td class="r mono">2,132</td>
+          </tr>
+          <tr class="disabled">
+            <td class="cname">s <span class="tag-off">off</span></td><td><span class="cprod">Iron</span></td>
+            <td class="r mono">0.12</td><td class="r mono">0.083</td><td class="r mono">0.01</td>
+            <td class="r lv">E<b>7</b> S<b>3</b> B<b>1</b></td><td class="r mono">2,068</td>
+          </tr>
+          <tr class="disabled">
+            <td class="cname">s <span class="tag-off">off</span></td><td><span class="cprod">Iron</span></td>
+            <td class="r mono">0.05</td><td class="r mono">0.083</td><td class="r mono">0.00</td>
+            <td class="r lv">E<b>7</b> S<b>3</b> B<b>1</b></td><td class="r mono">2,068</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="tfoot">
+            <td colspan="4">Total · 6 active companies</td>
+            <td class="r money">+91.80 / day</td>
+            <td class="r"></td>
+            <td class="r mono">23,769</td>
+          </tr>
+        </tfoot>
+      </table>
+      <div class="note">Money/day = current production × live market price (itemTrading.getPrices). Disabled companies are excluded from the total. Prices update every 15s with the live snapshot.</div>
+    </section>
+  </div>
+
+</div>
+</body>
+</html>

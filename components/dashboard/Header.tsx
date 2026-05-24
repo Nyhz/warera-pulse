@@ -1,9 +1,25 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useWageStats } from "@/lib/api/queries";
 import { formatPrice } from "@/lib/util/format";
+
+function NavLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+  return (
+    <a
+      href={href}
+      className={`rounded-[4px] border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+        active
+          ? "border-accent/40 bg-accent/10 text-accent"
+          : "border-line bg-panel text-dim hover:border-dim hover:bg-panel2 hover:text-txt"
+      }`}
+    >
+      {label}
+    </a>
+  );
+}
 
 function useClock() {
   const [now, setNow] = useState<Date | null>(null);
@@ -21,6 +37,7 @@ export function Header() {
     ? now.toLocaleTimeString("en-GB", { hour12: false, timeZone: "UTC" })
     : "--:--:--";
   const { data: wage } = useWageStats();
+  const pathname = usePathname();
 
   return (
     <header className="flex items-center gap-3.5 border-b border-line bg-panel px-4 py-[11px]">
@@ -33,9 +50,10 @@ export function Header() {
           priority
           className="h-[34px] w-auto"
         />
-        <span className="border-l border-line pl-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-dim">
-          Geo Terminal
-        </span>
+        <nav className="flex gap-2 border-l border-line pl-3">
+          <NavLink href="/" label="Markets" active={pathname === "/"} />
+          <NavLink href="/citizen" label="Citizen" active={pathname.startsWith("/citizen")} />
+        </nav>
       </div>
       <div className="flex-1" />
       {wage ? (
