@@ -436,8 +436,6 @@ export type MarketTx = {
   quantity: number;
   money: number;
   createdAt: string;
-  buyer: string | null;
-  seller: string | null;
 };
 
 /** Latest item-market fills for the transactions feed (own 15s-cached route). */
