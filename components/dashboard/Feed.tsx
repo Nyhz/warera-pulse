@@ -7,6 +7,8 @@ import { Panel, PanelHead } from "@/components/ui/Panel";
 import { Flag } from "@/components/ui/Flag";
 import { CountryPicker } from "@/components/ui/CountryPicker";
 import { ItemIcon } from "@/components/ui/ItemIcon";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useIsMobile } from "@/lib/hooks";
 import { ECONOMY_CODES } from "@/lib/catalog";
 import { formatCompact } from "@/lib/util/format";
 
@@ -77,6 +79,10 @@ export function Feed({ className = "" }: { className?: string }) {
     [events, country],
   );
   const countryName = country ? countriesById?.get(country)?.name : null;
+
+  const isMobile = useIsMobile();
+  const [limit, setLimit] = useState(7);
+  const visible = isMobile ? shown.slice(0, limit) : shown.slice(0, 20);
 
   const tag = (id?: string): ReactNode => {
     const c: Country | undefined = id ? countriesById?.get(id) : undefined;
@@ -207,19 +213,24 @@ export function Feed({ className = "" }: { className?: string }) {
             No recent events{countryName ? ` for ${countryName}` : ""}
           </div>
         ) : (
-          shown.slice(0, 20).map((e) => {
-            const { icon, msg } = render(e);
-            return (
-              <div
-                key={e._id}
-                className="grid grid-cols-[46px_18px_1fr] items-start gap-2 border-b border-line px-3.5 py-[9px]"
-              >
-                <span className="font-mono text-[11px] text-faint">{fmtTime(e.createdAt)}</span>
-                <span className="text-[12px] leading-[1.3]">{icon}</span>
-                <span className="text-[12.5px] leading-[1.5]">{msg}</span>
-              </div>
-            );
-          })
+          <>
+            {visible.map((e) => {
+              const { icon, msg } = render(e);
+              return (
+                <div
+                  key={e._id}
+                  className="grid grid-cols-[46px_18px_1fr] items-start gap-2 border-b border-line px-3.5 py-[9px]"
+                >
+                  <span className="font-mono text-[11px] text-faint">{fmtTime(e.createdAt)}</span>
+                  <span className="text-[12px] leading-[1.3]">{icon}</span>
+                  <span className="text-[12.5px] leading-[1.5]">{msg}</span>
+                </div>
+              );
+            })}
+            {isMobile && shown.length > visible.length ? (
+              <LoadMore onClick={() => setLimit((l) => l + 10)} remaining={shown.length - visible.length} />
+            ) : null}
+          </>
         )}
       </div>
     </Panel>

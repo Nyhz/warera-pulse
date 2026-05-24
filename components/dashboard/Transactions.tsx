@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useTransactions, type MarketTx } from "@/lib/api/queries";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { ItemIcon } from "@/components/ui/ItemIcon";
 import { EquipmentIcon } from "@/components/ui/EquipmentIcon";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useIsMobile } from "@/lib/hooks";
 import { ECONOMY_ITEMS, WEAPON_TIERS } from "@/lib/catalog";
 import { formatCompact } from "@/lib/util/format";
 
@@ -60,6 +63,9 @@ function Row({ t }: { t: MarketTx }) {
 export function Transactions({ className = "" }: { className?: string }) {
   const { data, isLoading, isError } = useTransactions();
   const items = data ?? [];
+  const isMobile = useIsMobile();
+  const [limit, setLimit] = useState(7);
+  const shown = isMobile ? items.slice(0, limit) : items;
 
   return (
     <Panel className={`flex min-h-0 flex-col overflow-hidden ${className}`}>
@@ -72,7 +78,12 @@ export function Transactions({ className = "" }: { className?: string }) {
         ) : items.length === 0 ? (
           <div className="px-3.5 py-10 text-center font-mono text-[11px] text-faint">No recent trades</div>
         ) : (
-          items.map((t) => <Row key={t.id} t={t} />)
+          <>
+            {shown.map((t) => <Row key={t.id} t={t} />)}
+            {isMobile && items.length > shown.length ? (
+              <LoadMore onClick={() => setLimit((l) => l + 10)} remaining={items.length - shown.length} />
+            ) : null}
+          </>
         )}
       </div>
     </Panel>

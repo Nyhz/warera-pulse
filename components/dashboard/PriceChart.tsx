@@ -130,7 +130,7 @@ export function PriceChart({ className = "" }: { className?: string }) {
     <Panel className={`flex min-h-0 flex-col overflow-hidden ${className}`}>
       <PanelHead title={`Price · ${item?.symbol.toUpperCase() ?? ""}`} meta="LIVE · WARERA GATEWAY" />
       <div className="flex min-h-0 flex-1 flex-col p-4">
-        <div className="flex shrink-0 items-end justify-between gap-4">
+        <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>
             <div className="text-[12px] font-semibold text-dim">{item?.name}</div>
             <div className="flex items-baseline gap-2.5 font-mono leading-[1.05]">
@@ -142,7 +142,7 @@ export function PriceChart({ className = "" }: { className?: string }) {
               </span>
             </div>
           </div>
-          <div className="flex w-[235px] shrink-0 overflow-hidden rounded-[3px] border border-line">
+          <div className="flex w-full shrink-0 overflow-hidden rounded-[3px] border border-line sm:w-[235px]">
             <Stat k="24h O" v={hasDay ? formatPrice(open, decimals) : "—"} />
             <Stat k="24h H" v={hasDay ? formatPrice(high, decimals) : "—"} />
             <Stat k="24h L" v={hasDay ? formatPrice(low, decimals) : "—"} />
@@ -172,7 +172,7 @@ export function PriceChart({ className = "" }: { className?: string }) {
           >
             {tf === "week" ? "7D · 1H" : "30D · 12H"}
           </span>
-          <div className="ml-auto flex w-[235px] gap-1.5">
+          <div className="ml-auto flex w-full gap-1.5 sm:w-[235px]">
             <MaToggle
               on={showSMA}
               color={SMA_COLOR}

@@ -20,7 +20,7 @@ export function PanelHead({
   badge?: ReactNode;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-line px-3.5 py-2.5">
+    <div className="flex h-[44px] shrink-0 items-center gap-2 border-b border-line px-3.5">
       <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-dim">
         {title}
       </span>

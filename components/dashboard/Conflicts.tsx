@@ -5,6 +5,8 @@ import { useLiveBattles, type LiveBattle, type LiveBattleSide } from "@/lib/api/
 import { Panel, PanelHead, HotBadge } from "@/components/ui/Panel";
 import { formatCompact, formatCountdown } from "@/lib/util/format";
 import { Flag } from "@/components/ui/Flag";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useIsMobile } from "@/lib/hooks";
 
 const MIN_DAMAGE = 10_000_000;
 
@@ -147,12 +149,15 @@ function ConflictCard({ battle }: { battle: LiveBattle }) {
 
 export function Conflicts({ className = "" }: { className?: string }) {
   const { battles, isLoading, isError } = useLiveBattles();
+  const isMobile = useIsMobile();
+  const [limit, setLimit] = useState(3);
   const hot = battles
     .filter((b) => b.attacker.damage + b.defender.damage >= MIN_DAMAGE)
     .sort(
       (x, y) =>
         y.attacker.damage + y.defender.damage - (x.attacker.damage + x.defender.damage),
     );
+  const shown = isMobile ? hot.slice(0, limit) : hot;
 
   return (
     <Panel className={`flex min-h-0 flex-col overflow-hidden ${className}`}>
@@ -174,7 +179,12 @@ export function Conflicts({ className = "" }: { className?: string }) {
             No conflicts over 10M damage
           </div>
         ) : (
-          hot.map((b) => <ConflictCard key={b.id} battle={b} />)
+          <>
+            {shown.map((b) => <ConflictCard key={b.id} battle={b} />)}
+            {isMobile && hot.length > shown.length ? (
+              <LoadMore onClick={() => setLimit((l) => l + 5)} remaining={hot.length - shown.length} />
+            ) : null}
+          </>
         )}
       </div>
     </Panel>

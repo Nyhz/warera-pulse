@@ -17,6 +17,10 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* The full 3-column 100dvh terminal needs room; below this the intermediate
+     (scrolling, 2-column) layout reads better. Shifted from the default 64rem. */
+  --breakpoint-lg: 75rem; /* 1200px */
 }
 
 :root {

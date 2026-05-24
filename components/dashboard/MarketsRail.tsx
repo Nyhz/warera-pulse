@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Item } from "@/lib/types";
 import { useEconomyItems, useEquipmentAvgs } from "@/lib/api/queries";
 import { useUIStore } from "@/lib/store/ui";
@@ -158,15 +158,15 @@ function Tab({
   );
 }
 
-export function MarketsRail({ className = "" }: { className?: string }) {
+/** Shared tabs + economy/military lists, used by both the rail and the mobile dropdown. */
+function RailLists() {
   const [tab, setTab] = useState<"economy" | "military">("economy");
   const { items } = useEconomyItems();
   const mil = tab === "military";
   const { data: avgs, isLoading: avgsLoading } = useEquipmentAvgs(mil);
 
   return (
-    <Panel className={`flex min-h-0 flex-col overflow-hidden ${className}`}>
-      <PanelHead title="Markets" />
+    <>
       <div className="flex shrink-0 border-b border-line">
         <Tab active={!mil} onClick={() => setTab("economy")}>
           Economy
@@ -209,6 +209,60 @@ export function MarketsRail({ className = "" }: { className?: string }) {
           </>
         )}
       </div>
+    </>
+  );
+}
+
+/** Desktop sidebar (md+). */
+export function MarketsRail({ className = "" }: { className?: string }) {
+  return (
+    <Panel className={`flex min-h-0 flex-col overflow-hidden ${className}`}>
+      <PanelHead title="Markets" />
+      <RailLists />
     </Panel>
+  );
+}
+
+/** Mobile (<md): a dropdown above the chart so you pick a resource without
+ * scrolling away from it. Closes once a resource is selected. */
+export function MarketsRailMobile({ className = "" }: { className?: string }) {
+  const [open, setOpen] = useState(false);
+  const selected = useUIStore((s) => s.selectedSymbol);
+  const { items } = useEconomyItems();
+  const cur = items.find((i) => i.symbol === selected) ?? items[0];
+
+  // Selecting an economy resource changes `selected` → close the dropdown.
+  useEffect(() => setOpen(false), [selected]);
+
+  return (
+    <div className={`relative bg-panel ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2.5 bg-panel2 px-3.5 py-2.5 text-left transition-colors hover:bg-[#0e1420]"
+      >
+        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-dim">Markets</span>
+        {cur ? (
+          <span className="flex items-center gap-1.5">
+            <ItemIcon code={cur.symbol} className="h-4 w-4 rounded-[2px]" />
+            <span className="text-[12px] font-bold uppercase tracking-[0.04em]">{cur.symbol}</span>
+            <span className="font-mono text-[12px] font-bold tabular-nums">{formatPrice(cur.price)}</span>
+          </span>
+        ) : null}
+        <span className="ml-auto flex items-center gap-1 rounded-[4px] border border-accent/40 bg-accent/10 px-2 py-1 text-[9.5px] font-bold uppercase tracking-[0.1em] text-accent">
+          {open ? "Close" : "Change"}
+          <span className="font-mono leading-none">{open ? "▴" : "▾"}</span>
+        </span>
+      </button>
+      {open ? (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
+          <div className="absolute left-0 right-0 top-full z-50 flex max-h-[65vh] flex-col overflow-hidden border-b border-line bg-panel shadow-xl">
+            <RailLists />
+          </div>
+        </>
+      ) : null}
+    </div>
   );
 }

@@ -1,12 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useHotNations } from "@/lib/api/queries";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { formatCompact } from "@/lib/util/format";
 import { Flag } from "@/components/ui/Flag";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useIsMobile } from "@/lib/hooks";
 
 export function HotNations({ className = "" }: { className?: string }) {
   const { nations, isLoading } = useHotNations(15);
+  const isMobile = useIsMobile();
+  const [limit, setLimit] = useState(5);
+  const shown = isMobile ? nations.slice(0, limit) : nations;
 
   return (
     <Panel className={`flex flex-col overflow-hidden ${className}`}>
@@ -17,19 +23,24 @@ export function HotNations({ className = "" }: { className?: string }) {
             Loading…
           </div>
         ) : (
-          nations.map((n, i) => (
-            <div
-              key={`${n.code}-${i}`}
-              className="flex items-center gap-2.5 border-b border-line px-3.5 py-2"
-            >
-              <span className="w-3 font-mono text-[11px] text-faint">{i + 1}</span>
-              <Flag code={n.code} />
-              <span className="truncate text-[11px] font-semibold text-txt">{n.name}</span>
-              <span className="ml-auto font-mono text-[12px] font-bold tabular-nums text-down">
-                🔥 {formatCompact(n.value)}
-              </span>
-            </div>
-          ))
+          <>
+            {shown.map((n, i) => (
+              <div
+                key={`${n.code}-${i}`}
+                className="flex items-center gap-2.5 border-b border-line px-3.5 py-2"
+              >
+                <span className="w-3 font-mono text-[11px] text-faint">{i + 1}</span>
+                <Flag code={n.code} />
+                <span className="truncate text-[11px] font-semibold text-txt">{n.name}</span>
+                <span className="ml-auto font-mono text-[12px] font-bold tabular-nums text-down">
+                  🔥 {formatCompact(n.value)}
+                </span>
+              </div>
+            ))}
+            {isMobile && nations.length > shown.length ? (
+              <LoadMore onClick={() => setLimit((l) => l + 10)} remaining={nations.length - shown.length} />
+            ) : null}
+          </>
         )}
       </div>
     </Panel>
