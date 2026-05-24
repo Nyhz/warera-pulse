@@ -16,7 +16,7 @@ export default function Home() {
           768–1024px: 2 columns [rail | chart+feed] + Hot Nations & Active
           Conflicts side by side as a full-width bottom row (page scrolls).
           ≥1024px: 3 columns locked to 100dvh (chart 5fr over feed 2fr). */}
-      <main className="flex flex-1 flex-col gap-px bg-line md:grid md:grid-cols-[200px_minmax(0,1fr)] md:[grid-template-rows:520px_300px] lg:min-h-0 lg:grid-cols-[248px_minmax(0,1fr)_360px] lg:[grid-template-rows:minmax(0,5fr)_minmax(0,2fr)]">
+      <main className="flex flex-1 flex-col gap-px bg-line md:grid md:grid-cols-[212px_minmax(0,1fr)] md:[grid-template-rows:520px_300px] lg:min-h-0 lg:grid-cols-[268px_minmax(0,1fr)_360px] lg:[grid-template-rows:minmax(0,5fr)_minmax(0,2fr)]">
         {/* Price chart */}
         <PriceChart className="order-1 h-[520px] min-w-0 md:[grid-column:2] md:[grid-row:1] lg:h-auto lg:min-h-0" />
 

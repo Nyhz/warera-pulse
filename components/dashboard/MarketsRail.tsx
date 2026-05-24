@@ -6,6 +6,7 @@ import { useEconomyItems, useEquipmentAvgs } from "@/lib/api/queries";
 import { useUIStore } from "@/lib/store/ui";
 import { ARMOR_SLOTS, ARMOR_TIERS, WEAPON_TIERS, armorCode } from "@/lib/catalog";
 import { Panel, PanelHead } from "@/components/ui/Panel";
+import { ItemIcon } from "@/components/ui/ItemIcon";
 import { formatPrice } from "@/lib/util/format";
 
 function Spark({ item }: { item: Item }) {
@@ -46,10 +47,11 @@ function EconRow({ item }: { item: Item }) {
       type="button"
       onClick={() => setSelected(item.symbol)}
       aria-pressed={active}
-      className={`grid w-full grid-cols-[1fr_auto_54px] items-center gap-2.5 border-b border-line px-3 py-1.5 text-left transition-colors hover:bg-[#0e1420] ${
+      className={`grid w-full grid-cols-[20px_1fr_auto_54px] items-center gap-2.5 border-b border-line px-3 py-1.5 text-left transition-colors hover:bg-[#0e1420] ${
         active ? "bg-[#0f1826] shadow-[inset_2px_0_0_var(--color-accent)]" : ""
       }`}
     >
+      <ItemIcon code={item.symbol} className="h-5 w-5 rounded-[2px]" />
       <div className="min-w-0">
         <div className="truncate text-[11px] font-bold uppercase tracking-[0.04em]">
           {item.symbol}

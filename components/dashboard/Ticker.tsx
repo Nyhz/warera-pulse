@@ -3,14 +3,16 @@
 import type { Item } from "@/lib/types";
 import { useEconomyItems } from "@/lib/api/queries";
 import { arrow, formatPct, formatPrice } from "@/lib/util/format";
+import { ItemIcon } from "@/components/ui/ItemIcon";
 
 function Tk({ item, hidden }: { item: Item; hidden?: boolean }) {
   const up = item.change24h >= 0;
   return (
     <div
       aria-hidden={hidden}
-      className="flex flex-none items-baseline gap-2 whitespace-nowrap border-r border-line px-4 py-2"
+      className="flex flex-none items-center gap-2 whitespace-nowrap border-r border-line px-4 py-2"
     >
+      <ItemIcon code={item.symbol} className="h-5 w-5 rounded-[2px]" />
       <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-dim">
         {item.symbol}
       </span>
