@@ -41,10 +41,7 @@ function SideLabel({
       }`}
     >
       <Flag code={side.code} />
-      <span className="font-mono text-[12px] font-extrabold tracking-[0.05em]">
-        {side.code}
-      </span>
-      <span className="truncate text-[11px] text-dim">{side.name}</span>
+      <span className="truncate text-[12px] font-bold text-txt">{side.name}</span>
       <span
         className={`shrink-0 rounded-[2px] px-1 py-px text-[8px] font-bold uppercase tracking-[0.08em] ${
           role === "DEF" ? "bg-amber/15 text-amber" : "bg-cyan/15 text-cyan"

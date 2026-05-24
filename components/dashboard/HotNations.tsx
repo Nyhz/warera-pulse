@@ -24,8 +24,7 @@ export function HotNations({ className = "" }: { className?: string }) {
             >
               <span className="w-3 font-mono text-[11px] text-faint">{i + 1}</span>
               <Flag code={n.code} />
-              <span className="font-mono text-[11px] font-extrabold">{n.code}</span>
-              <span className="truncate text-[11px] text-dim">{n.name}</span>
+              <span className="truncate text-[11px] font-semibold text-txt">{n.name}</span>
               <span className="ml-auto font-mono text-[12px] font-bold tabular-nums text-down">
                 🔥 {formatCompact(n.value)}
               </span>
