@@ -262,27 +262,15 @@ export function PriceChart({ className = "" }: { className?: string }) {
                 </>
               )}
             </div>
+            <a
+              href={`https://app.warera.io/market/trading?itemCode=${item?.symbol ?? ""}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex shrink-0 items-center justify-center gap-1.5 border-t border-line bg-accent/10 py-2 text-[10.5px] font-bold uppercase tracking-[0.14em] text-accent transition-colors hover:bg-accent/20"
+            >
+              Trade <span aria-hidden>↗</span>
+            </a>
           </div>
-        </div>
-
-        {/* deep-link to the in-game market for this resource */}
-        <div className="mt-2.5 grid shrink-0 grid-cols-2 gap-2">
-          <a
-            href={`https://app.warera.io/market/trading?itemCode=${item?.symbol ?? ""}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 rounded-[3px] border border-up/40 bg-up/12 py-2 text-[12px] font-bold uppercase tracking-[0.14em] text-up transition-colors hover:bg-up/20"
-          >
-            Buy <span aria-hidden>↗</span>
-          </a>
-          <a
-            href={`https://app.warera.io/market/trading?itemCode=${item?.symbol ?? ""}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 rounded-[3px] border border-down/40 bg-down/12 py-2 text-[12px] font-bold uppercase tracking-[0.14em] text-down transition-colors hover:bg-down/20"
-          >
-            Sell <span aria-hidden>↗</span>
-          </a>
         </div>
       </div>
     </Panel>
