@@ -154,11 +154,8 @@ export function Conflicts({ className = "" }: { className?: string }) {
   const isMobile = useIsMobile();
   const [limit, setLimit] = useState(3);
   const hot = battles
-    .filter((b) => b.attacker.damage + b.defender.damage >= MIN_DAMAGE)
-    .sort(
-      (x, y) =>
-        y.attacker.damage + y.defender.damage - (x.attacker.damage + x.defender.damage),
-    );
+    .filter((b) => b.totalDamage >= MIN_DAMAGE)
+    .sort((x, y) => y.totalDamage - x.totalDamage);
   const shown = isMobile ? hot.slice(0, limit) : hot;
 
   return (
