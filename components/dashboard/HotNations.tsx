@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useHotNations } from "@/lib/api/queries";
+import { useHotNations } from "@/lib/api/snapshot";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { formatCompact } from "@/lib/util/format";
 import { Flag } from "@/components/ui/Flag";

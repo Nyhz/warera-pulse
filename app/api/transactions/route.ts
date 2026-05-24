@@ -1,4 +1,5 @@
 import { gatewayQuery } from "@/lib/gateway";
+import { num } from "@/lib/util/format";
 
 /**
  * Latest market fills for the live transactions feed — BOTH resource trades
@@ -27,8 +28,6 @@ type RawTx = {
   createdAt?: string;
   item?: { type?: string };
 };
-
-const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
 export async function GET() {
   const [resourceTx, gearTx] = await Promise.all([

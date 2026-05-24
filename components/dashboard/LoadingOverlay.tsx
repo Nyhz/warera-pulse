@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useItemPrices } from "@/lib/api/queries";
+import { useItemPrices } from "@/lib/api/snapshot";
 import { Spinner } from "@/components/ui/Spinner";
 
 /**

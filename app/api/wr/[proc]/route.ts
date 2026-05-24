@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { API2, BASE, KEY, cacheHeaders, gatewayHeaders } from "@/lib/gateway";
 
 /**
  * Generic proxy to the WarEra tRPC API for the few endpoints that aren't part
@@ -15,10 +16,6 @@ import type { NextRequest } from "next/server";
  * With a key set, everything routes through the gateway. Without one, it uses
  * the public api2 endpoints.
  */
-const GATEWAY = "https://gateway.warerastats.io/trpc";
-const API2 = "https://api2.warera.io/trpc";
-const KEY = process.env.WARERA_API_KEY?.trim() || undefined;
-const BASE = process.env.WARERA_API_BASE?.trim() || (KEY ? GATEWAY : API2);
 
 /** Revalidate window (seconds) per procedure. Long for static reference data. */
 const CACHE_TTL: Record<string, number> = {
@@ -36,9 +33,7 @@ async function fetchUpstream(
 ): Promise<Response> {
   const url = new URL(`${base}/${proc}`);
   if (input) url.searchParams.set("input", input);
-  const headers: Record<string, string> = { "User-Agent": "WarEraPulse/0.1" };
-  if (KEY && base !== API2) headers["X-API-Key"] = KEY;
-  return fetch(url, { headers, next: { revalidate: ttl } });
+  return fetch(url, { headers: gatewayHeaders(base), next: { revalidate: ttl } });
 }
 
 export async function GET(
@@ -63,9 +58,6 @@ export async function GET(
 
   return new Response(body, {
     status,
-    headers: {
-      "content-type": "application/json",
-      "cache-control": `public, s-maxage=${ttl}, stale-while-revalidate=${ttl * 2}`,
-    },
+    headers: { "content-type": "application/json", ...cacheHeaders(ttl) },
   });
 }

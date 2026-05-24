@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useFeed } from "@/lib/api/queries";
-import type { Country, WrEvent } from "@/lib/api/schemas";
+import { useFeed } from "@/lib/api/snapshot";
+import type { Country, WrEvent } from "@/lib/api/types";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { Flag } from "@/components/ui/Flag";
 import { CountryPicker } from "@/components/ui/CountryPicker";

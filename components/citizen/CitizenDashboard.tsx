@@ -1,43 +1,26 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   useCitizen,
-  useItemPrices,
-  useCountries,
-  useRegions,
-  useWageStats,
   type CitizenCompany,
   type CitizenSkills,
   type CitizenWealth,
-  type RegionInfo,
-} from "@/lib/api/queries";
+} from "@/lib/api/citizen";
+import { useItemPrices, useWageStats } from "@/lib/api/snapshot";
+import { useCountries, useRegions, type RegionInfo } from "@/lib/api/reference";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { Flag } from "@/components/ui/Flag";
-import { formatPct } from "@/lib/util/format";
-import { ECONOMY_ITEMS } from "@/lib/catalog";
+import { formatPct, money, trimDecimal } from "@/lib/util/format";
+import { SPECIALIZATION_BONUS, itemName } from "@/lib/catalog";
 
 const STORAGE_KEY = "wr-citizen-id";
-
-/** Flat bonus for producing the country's specialized item (% production). */
-const SPECIALIZATION_BONUS = 30;
-
-/** Trim a possibly-decimal percent: 50 → "50", 50.5 → "50.5". */
-const pct = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
-
-const ITEM_NAME: Record<string, string> = Object.fromEntries(
-  ECONOMY_ITEMS.map((i) => [i.code, i.name]),
-);
-const itemName = (code: string) => ITEM_NAME[code] ?? code.charAt(0).toUpperCase() + code.slice(1);
 
 /** Pull a 24-hex user id out of a raw id or an app.warera.io profile URL. */
 function parseUserId(raw: string): string | null {
   const m = raw.trim().match(/[0-9a-fA-F]{24}/);
   return m ? m[0].toLowerCase() : null;
-}
-
-function money(n: number, decimals = 2): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
 const TIER_CLASS: Record<string, string> = {
@@ -476,13 +459,13 @@ function BonusTag({
   return (
     <span className="group relative inline-flex cursor-default items-center gap-1 font-semibold text-up">
       <FactoryIcon className="h-3 w-3" />
-      +{pct(total)}%
+      +{trimDecimal(total)}%
       <span className="pointer-events-none absolute left-0 top-full z-30 mt-1 hidden w-max max-w-[280px] rounded-[3px] border border-line bg-panel2 p-2.5 text-left shadow-lg group-hover:block">
         <span className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.12em] text-faint">
           Production bonus
         </span>
         <span className="block text-[11px] leading-relaxed text-up">
-          +{pct(base)}% strategic resources production
+          +{trimDecimal(base)}% strategic resources production
         </span>
         {spec > 0 ? (
           <span className="block text-[11px] leading-relaxed text-up">
@@ -580,10 +563,11 @@ function Avatar({ url, username }: { url: string | null; username: string }) {
   const [failed, setFailed] = useState(false);
   if (url && !failed) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={url}
         alt={username}
+        width={46}
+        height={46}
         onError={() => setFailed(true)}
         className="h-[46px] w-[46px] rounded-[4px] border border-line object-cover"
       />

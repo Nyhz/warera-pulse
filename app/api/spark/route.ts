@@ -1,5 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
+import type { DaySpark } from "@/lib/types";
+import { cacheHeaders } from "@/lib/gateway";
 
 /**
  * Last-24h trend for ALL 21 items in one query: hourly close points (for the
@@ -12,12 +14,28 @@ import { supabase } from "@/lib/supabase";
 const REVALIDATE = 300;
 const HOURS = 24;
 
-export type DaySpark = { points: number[]; open: number; high: number; low: number };
-
 const getSparks = unstable_cache(
   async (): Promise<Record<string, DaySpark>> => {
     if (!supabase) return {};
     const since = new Date(Date.now() - HOURS * 3600 * 1000).toISOString();
+
+    // Fast path: hourly close points + open/high/low computed in Postgres.
+    const rpc = await supabase.rpc("price_sparks", { p_since: since });
+    if (!rpc.error && Array.isArray(rpc.data)) {
+      const out: Record<string, DaySpark> = {};
+      for (const r of rpc.data as {
+        item_code: string;
+        points: number[] | null;
+        open: number;
+        high: number;
+        low: number;
+      }[]) {
+        out[r.item_code] = { points: r.points ?? [], open: r.open, high: r.high, low: r.low };
+      }
+      return out;
+    }
+
+    // Fallback (function not yet migrated): pull rows and group in JS.
     const { data, error } = await supabase
       .from("price_history")
       .select("item_code, ts, price")
@@ -58,9 +76,5 @@ const getSparks = unstable_cache(
 
 export async function GET() {
   const sparks = await getSparks();
-  return Response.json(sparks, {
-    headers: {
-      "cache-control": `public, s-maxage=${REVALIDATE}, stale-while-revalidate=${REVALIDATE * 2}`,
-    },
-  });
+  return Response.json(sparks, { headers: cacheHeaders(REVALIDATE) });
 }

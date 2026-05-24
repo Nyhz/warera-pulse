@@ -1,4 +1,5 @@
 import { gatewayQuery } from "@/lib/gateway";
+import { num } from "@/lib/util/format";
 
 /**
  * Countries trimmed to the fields the UI uses. The raw country.getAllCountries
@@ -11,9 +12,6 @@ import { gatewayQuery } from "@/lib/gateway";
  */
 const REVALIDATE = 1800;
 
-/** Flat specialization bonus for producing a country's specialized item (%). */
-export const SPECIALIZATION_BONUS = 30;
-
 export type CountryLite = {
   _id: string;
   name: string;
@@ -24,8 +22,6 @@ export type CountryLite = {
   marketTax: number;
   development: number;
 };
-
-const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
 export async function GET() {
   const raw = await gatewayQuery<unknown>("country.getAllCountries", undefined, REVALIDATE);
@@ -49,9 +45,9 @@ export async function GET() {
         code: typeof o.code === "string" ? o.code : "??",
         productionBonus: typeof pp === "number" && Number.isFinite(pp) ? pp : 0,
         specializedItem: typeof o.specializedItem === "string" ? o.specializedItem : null,
-        incomeTax: n(o.taxes?.income),
-        marketTax: n(o.taxes?.market),
-        development: n(o.development),
+        incomeTax: num(o.taxes?.income),
+        marketTax: num(o.taxes?.market),
+        development: num(o.development),
       });
     }
   }

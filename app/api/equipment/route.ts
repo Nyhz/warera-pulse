@@ -1,38 +1,25 @@
 import { EQUIPMENT_CODES } from "@/lib/catalog";
+import { API2, cacheHeaders, gatewayBatch } from "@/lib/gateway";
 
 /**
  * Average quality for every equipment code (3 weapons + 5×6 armor = 33),
  * fetched as ONE tRPC batch call to gameStat.getEquipmentAvgByCode instead of
  * 33 separate requests. Shared + cached via Next's Data Cache.
  */
-const GATEWAY = "https://gateway.warerastats.io/trpc";
-const API2 = "https://api2.warera.io/trpc";
-const KEY = process.env.WARERA_API_KEY?.trim() || undefined;
-const BASE = process.env.WARERA_API_BASE?.trim() || (KEY ? GATEWAY : API2);
 const REVALIDATE = 10;
 
-async function fetchBatch(base: string): Promise<unknown[]> {
-  const path = EQUIPMENT_CODES.map(() => "gameStat.getEquipmentAvgByCode").join(",");
-  const input = JSON.stringify(
-    Object.fromEntries(EQUIPMENT_CODES.map((code, i) => [i, { itemCode: code }])),
-  );
-  const url = `${base}/${path}?batch=1&input=${encodeURIComponent(input)}`;
-  const headers: Record<string, string> = { "User-Agent": "WarEraPulse/0.1" };
-  if (KEY && base !== API2) headers["X-API-Key"] = KEY;
-  const res = await fetch(url, { headers, next: { revalidate: REVALIDATE } });
-  if (!res.ok) throw new Error(`equipment batch ${res.status}`);
-  const json = (await res.json()) as unknown;
-  if (!Array.isArray(json)) throw new Error("equipment batch: not an array");
-  return json;
-}
+const ENTRIES = EQUIPMENT_CODES.map((code) => ({
+  proc: "gameStat.getEquipmentAvgByCode",
+  input: { itemCode: code },
+}));
 
 export async function GET() {
   let arr: unknown[];
   try {
-    arr = await fetchBatch(BASE);
+    arr = await gatewayBatch(ENTRIES, REVALIDATE);
   } catch {
     try {
-      arr = await fetchBatch(API2);
+      arr = await gatewayBatch(ENTRIES, REVALIDATE, API2);
     } catch {
       return Response.json({}, { status: 502 });
     }
@@ -45,9 +32,5 @@ export async function GET() {
     if (typeof v === "number" && Number.isFinite(v)) out[code] = v;
   });
 
-  return Response.json(out, {
-    headers: {
-      "cache-control": `public, s-maxage=${REVALIDATE}, stale-while-revalidate=${REVALIDATE * 2}`,
-    },
-  });
+  return Response.json(out, { headers: cacheHeaders(REVALIDATE) });
 }

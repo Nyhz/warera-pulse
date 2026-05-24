@@ -1,7 +1,7 @@
 "use client";
 
 import type { Item } from "@/lib/types";
-import { useEconomyItems } from "@/lib/api/queries";
+import { useEconomyItems } from "@/lib/api/snapshot";
 import { arrow, formatPct, formatPrice } from "@/lib/util/format";
 import { ItemIcon } from "@/components/ui/ItemIcon";
 

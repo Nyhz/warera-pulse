@@ -34,6 +34,9 @@ export const ECONOMY_ITEMS: EconItem[] = [
 
 export const ECONOMY_CODES = ECONOMY_ITEMS.map((i) => i.code);
 
+/** Flat production bonus for making a country's specialized item (%). */
+export const SPECIALIZATION_BONUS = 30;
+
 /**
  * Refining recipes — inputs and production points to make one unit of each
  * product. From gameConfig.items[code].{productionNeeds,productionPoints}
@@ -101,3 +104,24 @@ export const EQUIPMENT_CODES: string[] = [
   ...WEAPON_TIERS.map((w) => w.code),
   ...ARMOR_SLOTS.flatMap((s) => ARMOR_TIERS.map((t) => armorCode(s.slot, t))),
 ];
+
+const ITEM_NAME: Record<string, string> = Object.fromEntries(
+  ECONOMY_ITEMS.map((i) => [i.code, i.name]),
+);
+const WEAPON_NAME: Record<string, string> = Object.fromEntries(
+  WEAPON_TIERS.map((w) => [w.code, w.name]),
+);
+
+/** Display name for a resource code (falls back to a title-cased code). */
+export function itemName(code: string): string {
+  return ITEM_NAME[code] ?? code.charAt(0).toUpperCase() + code.slice(1);
+}
+
+/** Readable label for any traded item — resource, weapon, or armor piece. */
+export function itemLabel(code: string): string {
+  if (ITEM_NAME[code]) return ITEM_NAME[code];
+  if (WEAPON_NAME[code]) return WEAPON_NAME[code];
+  const m = code.match(/^([a-z]+)(\d)$/i); // armor: helmet4 → Helmet T4
+  if (m) return `${m[1].charAt(0).toUpperCase()}${m[1].slice(1)} T${m[2]}`;
+  return code;
+}

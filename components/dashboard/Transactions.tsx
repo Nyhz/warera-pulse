@@ -1,27 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useTransactions, type MarketTx } from "@/lib/api/queries";
+import { useTransactions, type MarketTx } from "@/lib/api/market";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { ItemIcon } from "@/components/ui/ItemIcon";
 import { EquipmentIcon } from "@/components/ui/EquipmentIcon";
 import { LoadMore } from "@/components/ui/LoadMore";
 import { useIsMobile } from "@/lib/hooks";
-import { ECONOMY_ITEMS, WEAPON_TIERS } from "@/lib/catalog";
+import { ECONOMY_CODES, itemLabel } from "@/lib/catalog";
 import { formatCompact } from "@/lib/util/format";
 
-const ITEM_NAME: Record<string, string> = Object.fromEntries(ECONOMY_ITEMS.map((i) => [i.code, i.name]));
-const WEAPON_NAME: Record<string, string> = Object.fromEntries(WEAPON_TIERS.map((w) => [w.code, w.name]));
-const ECON = new Set(ECONOMY_ITEMS.map((i) => i.code));
-
-/** Readable label for a traded item (resource, weapon, or armor piece). */
-function itemLabel(code: string): string {
-  if (ITEM_NAME[code]) return ITEM_NAME[code];
-  if (WEAPON_NAME[code]) return WEAPON_NAME[code];
-  const m = code.match(/^([a-z]+)(\d)$/i); // armor: helmet4 → Helmet T4
-  if (m) return `${m[1].charAt(0).toUpperCase()}${m[1].slice(1)} T${m[2]}`;
-  return code;
-}
+const ECON = new Set(ECONOMY_CODES);
 
 function fmtTime(iso: string): string {
   if (!iso) return "--:--";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useItemPrices } from "@/lib/api/queries";
+import { useItemPrices } from "@/lib/api/snapshot";
 
 /** Live feed indicator — reflects the price query: LIVE / SYNC / ERROR. */
 export function LiveStatus() {

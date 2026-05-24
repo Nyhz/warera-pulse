@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { ECONOMY_CODES } from "@/lib/catalog";
+import { BASE, gatewayHeaders } from "@/lib/gateway";
 
 /**
  * Price-history ingestion. Called on a schedule (cron-job.org, ~every 10min)
@@ -10,18 +11,15 @@ import { ECONOMY_CODES } from "@/lib/catalog";
  * This is the ONLY thing we persist — every other panel stays live (equipment
  * prices come live-batched from gameStat.getEquipmentAvgByCode via /api/equipment).
  */
-const GATEWAY = "https://gateway.warerastats.io/trpc";
-const API2 = "https://api2.warera.io/trpc";
-const KEY = process.env.WARERA_API_KEY?.trim() || undefined;
-const BASE = process.env.WARERA_API_BASE?.trim() || (KEY ? GATEWAY : API2);
 const SECRET = process.env.INGEST_SECRET?.trim();
 /** Keep this many days of history; older rows are pruned on each ingest. */
 const RETENTION_DAYS = 30;
 
 async function fetchPrices(): Promise<Record<string, number>> {
-  const headers: Record<string, string> = { "User-Agent": "WarEraPulse/0.1" };
-  if (KEY && BASE !== API2) headers["X-API-Key"] = KEY;
-  const res = await fetch(`${BASE}/itemTrading.getPrices`, { headers, cache: "no-store" });
+  const res = await fetch(`${BASE}/itemTrading.getPrices`, {
+    headers: gatewayHeaders(BASE),
+    cache: "no-store",
+  });
   const json = (await res.json()) as { result?: { data?: Record<string, number> } };
   return json.result?.data ?? {};
 }

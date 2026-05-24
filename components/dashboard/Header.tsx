@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useWageStats } from "@/lib/api/queries";
+import { useWageStats } from "@/lib/api/snapshot";
 import { formatPrice } from "@/lib/util/format";
 
 const NAV = [

@@ -1,4 +1,6 @@
 import type { NextRequest } from "next/server";
+import { num } from "@/lib/util/format";
+import { BASE, cacheHeaders, gatewayBatch, gatewayHeaders } from "@/lib/gateway";
 
 /**
  * Per-citizen economic snapshot for the Citizen dashboard.
@@ -14,23 +16,12 @@ import type { NextRequest } from "next/server";
  * intentionally NOT included — the client derives money/day from the live 10s
  * snapshot so it stays current without re-fetching this route.
  */
-const GATEWAY = "https://gateway.warerastats.io/trpc";
-const API2 = "https://api2.warera.io/trpc";
-const KEY = process.env.WARERA_API_KEY?.trim() || undefined;
-const BASE = process.env.WARERA_API_BASE?.trim() || (KEY ? GATEWAY : API2);
-
 /** User/company data is per-citizen; refresh window kept modest. */
 const REVALIDATE = 60;
 
-function headers(base: string): Record<string, string> {
-  const h: Record<string, string> = { "User-Agent": "WarEraPulse/0.1" };
-  if (KEY && base !== API2) h["X-API-Key"] = KEY;
-  return h;
-}
-
 async function query<T>(proc: string, input: unknown): Promise<T | null> {
   const url = `${BASE}/${proc}?input=${encodeURIComponent(JSON.stringify(input))}`;
-  const res = await fetch(url, { headers: headers(BASE), next: { revalidate: REVALIDATE } });
+  const res = await fetch(url, { headers: gatewayHeaders(BASE), next: { revalidate: REVALIDATE } });
   if (!res.ok) return null;
   const json = (await res.json()) as { result?: { data?: T } };
   return json.result?.data ?? null;
@@ -39,15 +30,18 @@ async function query<T>(proc: string, input: unknown): Promise<T | null> {
 /** Fetch many companies by id in ONE same-proc tRPC batch (fast). */
 async function fetchCompanies(ids: string[]): Promise<RawCompany[]> {
   if (ids.length === 0) return [];
-  const path = ids.map(() => "company.getById").join(",");
-  const input = JSON.stringify(Object.fromEntries(ids.map((id, i) => [i, { companyId: id }])));
-  const url = `${BASE}/${path}?batch=1&input=${encodeURIComponent(input)}`;
-  const res = await fetch(url, { headers: headers(BASE), next: { revalidate: REVALIDATE } });
-  if (!res.ok) return [];
-  const arr = (await res.json()) as { result?: { data?: RawCompany }; error?: unknown }[];
-  if (!Array.isArray(arr)) return [];
+  const entries = ids.map((id) => ({ proc: "company.getById", input: { companyId: id } }));
+  let arr: unknown[];
+  try {
+    arr = await gatewayBatch(entries, REVALIDATE);
+  } catch {
+    return [];
+  }
   return arr
-    .map((e) => (e && !e.error ? (e.result?.data ?? null) : null))
+    .map((e) => {
+      const entry = e as { result?: { data?: RawCompany }; error?: unknown };
+      return entry && !entry.error ? (entry.result?.data ?? null) : null;
+    })
     .filter((c): c is RawCompany => !!c);
 }
 
@@ -92,8 +86,6 @@ type RawCompany = {
   disabledAt?: string;
   activeUpgradeLevels?: { automatedEngine?: number; storage?: number; breakRoom?: number };
 };
-
-const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
 export async function GET(
   _req: NextRequest,
@@ -178,9 +170,5 @@ export async function GET(
     })),
   };
 
-  return Response.json(payload, {
-    headers: {
-      "cache-control": `public, s-maxage=${REVALIDATE}, stale-while-revalidate=${REVALIDATE * 2}`,
-    },
-  });
+  return Response.json(payload, { headers: cacheHeaders(REVALIDATE) });
 }

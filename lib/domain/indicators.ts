@@ -1,3 +1,9 @@
+/** Moving-average periods + line colors, shared by the chart and its canvas. */
+export const SMA_PERIOD = 20;
+export const EMA_PERIOD = 9;
+export const SMA_COLOR = "#d29922";
+export const EMA_COLOR = "#39c0d3";
+
 /** Moving averages over a close series. To draw a full line from the first bar
  * (even with few candles), the warmup uses an expanding window: early values
  * average whatever points exist so far, then converge to the true MA once

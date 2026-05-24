@@ -11,10 +11,7 @@
  * per-user. Time-based revalidation also gives stale-while-revalidate for free
  * (serves the last value instantly, refreshes in the background).
  */
-const GATEWAY = "https://gateway.warerastats.io/trpc";
-const API2 = "https://api2.warera.io/trpc";
-const KEY = process.env.WARERA_API_KEY?.trim() || undefined;
-const BASE = process.env.WARERA_API_BASE?.trim() || (KEY ? GATEWAY : API2);
+import { API2, cacheHeaders, gatewayBatch } from "@/lib/gateway";
 
 /** Gateway is polled at most once per this window, shared across all clients. */
 const REVALIDATE = 10;
@@ -44,19 +41,6 @@ const EMPTY: Snapshot = {
   ranking: null,
   wage: null,
 };
-
-async function fetchBatch(base: string): Promise<unknown[]> {
-  const path = PROCS.map((p) => p.proc).join(",");
-  const input = JSON.stringify(Object.fromEntries(PROCS.map((p, i) => [i, p.input])));
-  const url = `${base}/${path}?batch=1&input=${encodeURIComponent(input)}`;
-  const headers: Record<string, string> = { "User-Agent": "WarEraPulse/0.1" };
-  if (KEY && base !== API2) headers["X-API-Key"] = KEY;
-  const res = await fetch(url, { headers, next: { revalidate: REVALIDATE } });
-  if (!res.ok) throw new Error(`snapshot batch ${res.status}`);
-  const json = (await res.json()) as unknown;
-  if (!Array.isArray(json)) throw new Error("snapshot batch: not an array");
-  return json;
-}
 
 /** Unwrap one tRPC batch entry; null on a per-procedure error. */
 function unwrap(arr: unknown[], i: number): unknown {
@@ -145,9 +129,34 @@ function leanRanking(raw: unknown): unknown {
 }
 
 /**
+ * Trim events to {_id, countries, createdAt, data}. `data` is kept WHOLE (the
+ * feed reads many type-specific fields from it); we only guarantee `countries`
+ * is an array so the client can read it without per-event validation.
+ */
+function leanEvents(raw: unknown): unknown {
+  const items = (raw as { items?: unknown[] } | null)?.items;
+  if (!Array.isArray(items)) return raw;
+  return {
+    items: items.map((e) => {
+      const ev = e as { _id?: string; countries?: unknown; createdAt?: string; data?: unknown };
+      return {
+        _id: ev._id,
+        countries: Array.isArray(ev.countries) ? ev.countries : [],
+        createdAt: ev.createdAt,
+        data: ev.data ?? { type: "unknown" },
+      };
+    }),
+  };
+}
+
+/**
  * Last good value per snapshot field — resilience against gateway flaps. Each
  * field falls back independently, so one erroring proc never blanks a panel
- * that still has good data. Errors are never stored. In-memory per instance.
+ * that still has good data. Errors are never stored.
+ *
+ * BEST-EFFORT ONLY: in-memory per serverless instance — not shared across
+ * instances, not preserved across cold starts. The shared Next Data Cache is
+ * the durable layer; this just cushions back-to-back flaps on a warm instance.
  */
 const lastGoodSnapshot: Partial<Record<keyof Snapshot, unknown>> = {};
 
@@ -168,11 +177,11 @@ function mergeLastGood(fresh: Snapshot): Snapshot {
 export async function GET() {
   let arr: unknown[] | null = null;
   try {
-    arr = await fetchBatch(BASE);
+    arr = await gatewayBatch(PROCS, REVALIDATE);
   } catch {
     // If the keyed gateway batch fails outright, fall back to public api2.
     try {
-      arr = await fetchBatch(API2);
+      arr = await gatewayBatch(PROCS, REVALIDATE, API2);
     } catch {
       arr = null;
     }
@@ -182,7 +191,7 @@ export async function GET() {
     ? {
         prices: unwrap(arr, 0) as Record<string, number> | null,
         battles: leanBattles(unwrap(arr, 1)),
-        events: unwrap(arr, 2),
+        events: leanEvents(unwrap(arr, 2)),
         ranking: leanRanking(unwrap(arr, 3)),
         wage: unwrap(arr, 4),
       }
@@ -191,9 +200,5 @@ export async function GET() {
   // Serve fresh fields, backfilling any that errored with the last good value.
   const snapshot = mergeLastGood(fresh);
 
-  return Response.json(snapshot, {
-    headers: {
-      "cache-control": `public, s-maxage=${REVALIDATE}, stale-while-revalidate=${REVALIDATE * 2}`,
-    },
-  });
+  return Response.json(snapshot, { headers: cacheHeaders(REVALIDATE) });
 }

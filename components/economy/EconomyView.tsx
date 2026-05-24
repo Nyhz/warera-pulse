@@ -1,24 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useItemPrices, useCountries } from "@/lib/api/queries";
-import type { Country } from "@/lib/api/schemas";
+import { useItemPrices } from "@/lib/api/snapshot";
+import { useCountries } from "@/lib/api/reference";
+import type { Country } from "@/lib/api/types";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { ItemIcon } from "@/components/ui/ItemIcon";
 import { Flag } from "@/components/ui/Flag";
-import { ECONOMY_ITEMS, RECIPES, RAW_POINTS } from "@/lib/catalog";
-import { formatPrice } from "@/lib/util/format";
-
-const ITEM_NAME: Record<string, string> = Object.fromEntries(
-  ECONOMY_ITEMS.map((i) => [i.code, i.name]),
-);
-const itemName = (code: string) => ITEM_NAME[code] ?? code.charAt(0).toUpperCase() + code.slice(1);
+import { RECIPES, RAW_POINTS, SPECIALIZATION_BONUS, itemName } from "@/lib/catalog";
+import { formatPrice, trimDecimal } from "@/lib/util/format";
 
 /** Normalize a value within [min,max] to a 18–100% bar width so ranking shows. */
 const barWidth = (v: number, min: number, max: number) =>
   18 + ((v - min) / (max - min || 1)) * 82;
-
-const pct = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 /** One leaderboard row: a proportional bar behind icon · name/sub · big value. */
 function BarRow({
@@ -139,7 +133,7 @@ function Refining({ prices, className = "" }: { prices: Record<string, number>; 
                 {Object.entries(r.needs)
                   .map(([code, qty]) => `${qty}× ${itemName(code)}`)
                   .join(", ")}{" "}
-                · {r.points}pts{r.marginPct != null ? ` · +${pct(r.marginPct * 100)}%` : ""}
+                · {r.points}pts{r.marginPct != null ? ` · +${trimDecimal(r.marginPct * 100)}%` : ""}
               </>
             }
             value={formatPrice(r.perPoint)}
@@ -184,10 +178,6 @@ function SortBtn({
   );
 }
 
-/** Combined production bonus for making `resource` in a country (base + the
- * +30% specialization when the country specializes in that resource). */
-const SPECIALIZATION_BONUS = 30;
-
 function Nations({ countries, className = "" }: { countries: Country[]; className?: string }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("bonus");
@@ -230,7 +220,7 @@ function Nations({ countries, className = "" }: { countries: Country[]; classNam
           ? `${itemName(resource)} bonus`
           : "prod bonus";
   const fmt = (v: number) =>
-    sort === "dev" ? String(Math.round(v)) : sort === "tax" ? `${pct(v)}%` : `+${pct(v)}%`;
+    sort === "dev" ? String(Math.round(v)) : sort === "tax" ? `${trimDecimal(v)}%` : `+${trimDecimal(v)}%`;
 
   return (
     <Panel className={`flex h-[460px] flex-col overflow-hidden lg:h-auto lg:min-h-0 ${className}`}>

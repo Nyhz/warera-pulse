@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { Item } from "@/lib/types";
-import { useEconomyItems, useEquipmentAvgs } from "@/lib/api/queries";
+import { useEconomyItems } from "@/lib/api/snapshot";
+import { useEquipmentAvgs } from "@/lib/api/market";
 import { useUIStore } from "@/lib/store/ui";
 import { ARMOR_SLOTS, ARMOR_TIERS, WEAPON_TIERS, armorCode } from "@/lib/catalog";
 import { Panel, PanelHead } from "@/components/ui/Panel";

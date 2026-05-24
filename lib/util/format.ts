@@ -1,5 +1,23 @@
 /** Always-rounded number formatting — no float artifacts leak to the UI. */
 
+/** Coerce an unknown to a finite number, else 0. Used at the gateway boundary. */
+export function num(v: unknown): number {
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+}
+
+/** Thousands-grouped money with fixed decimals, e.g. 12345.6 → "12,345.60". */
+export function money(n: number, decimals = 2): string {
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+/** Trim a possibly-decimal number: 50 → "50", 50.5 → "50.5" (≤1 decimal). */
+export function trimDecimal(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
 /** Decimals to show for a price: 4 for sub-1 values, 3 otherwise (min 3). */
 export function priceDecimals(n: number): number {
   const a = Math.abs(n);

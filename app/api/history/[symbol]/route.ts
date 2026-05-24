@@ -1,6 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import type { Candle } from "@/lib/types";
+import { bucketCandles } from "@/lib/util/ohlc";
+import { cacheHeaders } from "@/lib/gateway";
 
 /**
  * Price history for one item as OHLC candles, reconstructed from the ~10-min
@@ -25,6 +27,19 @@ const getCandles = unstable_cache(
     if (!supabase) return [];
     const { days, bucket } = TF[tf] ?? TF.week;
     const since = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
+
+    // Fast path: bucket into OHLC candles in Postgres (one small result set).
+    const rpc = await supabase.rpc("price_candles", {
+      p_symbol: symbol,
+      p_since: since,
+      p_bucket: bucket,
+    });
+    if (!rpc.error && Array.isArray(rpc.data)) {
+      return (rpc.data as { t: number; open: number; high: number; low: number; close: number }[])
+        .map((r) => ({ time: Number(r.t), open: r.open, high: r.high, low: r.low, close: r.close }));
+    }
+
+    // Fallback (function not yet migrated): pull rows and bucket in JS.
     const { data, error } = await supabase
       .from("price_history")
       .select("ts, price")
@@ -33,23 +48,13 @@ const getCandles = unstable_cache(
       .order("ts", { ascending: true })
       .limit(10000);
     if (error || !data) return [];
-
-    // Bucket by the timeframe's interval. Rows are oldest→newest, so first
-    // seen = open, last seen = close; track running high/low.
-    const byBucket = new Map<number, Candle>();
-    for (const r of data as { ts: string; price: number }[]) {
-      const sec = Math.floor(new Date(r.ts).getTime() / 1000);
-      const time = sec - (sec % bucket);
-      const cur = byBucket.get(time);
-      if (!cur) {
-        byBucket.set(time, { time, open: r.price, high: r.price, low: r.price, close: r.price });
-      } else {
-        cur.high = Math.max(cur.high, r.price);
-        cur.low = Math.min(cur.low, r.price);
-        cur.close = r.price;
-      }
-    }
-    return [...byBucket.values()].sort((a, b) => a.time - b.time);
+    // Rows are oldest→newest, so first seen = open, last seen = close.
+    return bucketCandles(
+      data as { ts: string; price: number }[],
+      bucket,
+      (r) => Math.floor(new Date(r.ts).getTime() / 1000),
+      (r) => r.price,
+    );
   },
   ["price-history"],
   { revalidate: REVALIDATE },
@@ -59,12 +64,5 @@ export async function GET(req: Request, { params }: { params: Promise<{ symbol: 
   const { symbol } = await params;
   const tf = new URL(req.url).searchParams.get("tf") === "month" ? "month" : "week";
   const candles = await getCandles(symbol, tf);
-  return Response.json(
-    { candles },
-    {
-      headers: {
-        "cache-control": `public, s-maxage=${REVALIDATE}, stale-while-revalidate=${REVALIDATE * 2}`,
-      },
-    },
-  );
+  return Response.json({ candles }, { headers: cacheHeaders(REVALIDATE) });
 }

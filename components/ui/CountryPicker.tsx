@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Flag } from "./Flag";
-import type { Country } from "@/lib/api/schemas";
+import type { Country } from "@/lib/api/types";
 
 /** One option row in the dropdown. Module-scope so it isn't recreated per render. */
 function PickerRow({

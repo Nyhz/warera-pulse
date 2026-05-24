@@ -2,23 +2,14 @@
 
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { sma, ema } from "@/lib/domain/indicators";
-import {
-  useDaySparks,
-  useEconomyItems,
-  useItemHistory,
-  useTopOrders,
-  type Timeframe,
-} from "@/lib/api/queries";
+import { sma, ema, SMA_PERIOD, EMA_PERIOD, SMA_COLOR, EMA_COLOR } from "@/lib/domain/indicators";
+import { useDaySparks, useItemHistory, type Timeframe } from "@/lib/api/history";
+import { useEconomyItems } from "@/lib/api/snapshot";
+import { useTopOrders } from "@/lib/api/market";
 import { useUIStore } from "@/lib/store/ui";
 import { Panel, PanelHead } from "@/components/ui/Panel";
 import { Spinner } from "@/components/ui/Spinner";
 import { arrow, formatCompact, formatPct, formatPrice, priceDecimals } from "@/lib/util/format";
-
-const SMA_PERIOD = 20;
-const EMA_PERIOD = 9;
-const SMA_COLOR = "#d29922";
-const EMA_COLOR = "#39c0d3";
 
 // Heavy charting lib loaded on demand → kept out of the initial JS bundle.
 const Chart = dynamic(() => import("./PriceChartCanvas").then((m) => m.Chart), {

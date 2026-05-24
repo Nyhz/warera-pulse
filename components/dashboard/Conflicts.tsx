@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useLiveBattles, type LiveBattle, type LiveBattleSide } from "@/lib/api/queries";
+import { useLiveBattles, type LiveBattle, type LiveBattleSide } from "@/lib/api/snapshot";
 import { Panel, PanelHead, HotBadge } from "@/components/ui/Panel";
 import { formatCompact, formatCountdown } from "@/lib/util/format";
 import { Flag } from "@/components/ui/Flag";
