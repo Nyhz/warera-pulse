@@ -18,6 +18,7 @@ import {
 import { ECONOMY_ITEMS } from "@/lib/catalog";
 import type { Candle, Item } from "@/lib/types";
 import { useHistory } from "@/lib/store/history";
+import { useToken } from "@/lib/store/token";
 
 /** Single client poll cadence — the whole UI refreshes on this interval. */
 const POLL = 15_000;
@@ -210,6 +211,34 @@ export function useGameDates() {
   const parsed = dates ? GameDatesSchema.safeParse(dates) : null;
   const data = parsed?.success ? parsed.data : undefined;
   return { data, isError: q.isError, isLoading: q.isLoading };
+}
+
+export type OfferStat = {
+  floor: number;
+  attack: number | null;
+  crit: number | null;
+  state: number | null;
+  count: number;
+};
+
+/**
+ * Equipment floor prices (cheapest offer per item) via the BYOT proxy. Sends
+ * the user's token if connected; otherwise still tries (the server may have a
+ * fresh global cache from another user's token).
+ */
+export function useEquipmentOffers(enabled = true) {
+  const token = useToken((s) => s.token);
+  return useQuery({
+    queryKey: ["offers", !!token],
+    enabled,
+    queryFn: async () => {
+      const res = await fetch("/api/offers", token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+      if (!res.ok) return {} as Record<string, OfferStat>;
+      return (await res.json()) as Record<string, OfferStat>;
+    },
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
 }
 
 /** Average quality for every equipment code (one batched call). */

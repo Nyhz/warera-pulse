@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useWageStats } from "@/lib/api/queries";
 import { formatPrice } from "@/lib/util/format";
+import { TokenButton } from "@/components/dashboard/TokenButton";
 
 function useClock() {
   const [now, setNow] = useState<Date | null>(null);
@@ -59,6 +60,7 @@ export function Header() {
       <div className="font-mono text-[12px] text-dim">
         <b className="text-txt">{time}</b> UTC
       </div>
+      <TokenButton />
     </header>
   );
 }
