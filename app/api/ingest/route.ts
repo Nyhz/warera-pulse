@@ -1,19 +1,25 @@
 import type { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { ECONOMY_CODES } from "@/lib/catalog";
+import { fetchEquipmentOffers, persistOffers } from "@/lib/offers";
 
 /**
- * Price-history ingestion. Called on a schedule (GitHub Actions, ~every 15min)
- * with `Authorization: Bearer <INGEST_SECRET>`. Pulls the current prices for
- * the 21 resources from the gateway and appends one row per item to Supabase.
+ * Scheduled ingestion (cron-job.org, ~every 10min) with
+ * `Authorization: Bearer <INGEST_SECRET>`:
+ *  - appends a price snapshot for the 21 resources to `price_history`,
+ *  - if WARERA_JWT is set, also refreshes the shared `equipment_offers` so
+ *    equipment prices stay filled without needing any visitor to connect a
+ *    token (BYOT still works on top of this).
  *
- * This is the ONLY thing we persist — every other panel stays live.
+ * Prices are the only history we accumulate; equipment offers are upserted.
  */
 const GATEWAY = "https://gateway.warerastats.io/trpc";
 const API2 = "https://api2.warera.io/trpc";
 const KEY = process.env.WARERA_API_KEY?.trim() || undefined;
 const BASE = process.env.WARERA_API_BASE?.trim() || (KEY ? GATEWAY : API2);
 const SECRET = process.env.INGEST_SECRET?.trim();
+/** Optional dedicated WarEra account JWT to keep equipment offers fresh. */
+const WARERA_JWT = process.env.WARERA_JWT?.trim() || undefined;
 /** Keep this many days of history; older rows are pruned on each ingest. */
 const RETENTION_DAYS = 30;
 
@@ -52,5 +58,17 @@ export async function POST(req: NextRequest) {
   const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 3600 * 1000).toISOString();
   await supabase.from("price_history").delete().lt("ts", cutoff);
 
-  return Response.json({ inserted: rows.length, ts });
+  // Keep equipment offers fresh without needing a visitor token (if configured).
+  let offers = 0;
+  if (WARERA_JWT) {
+    try {
+      const o = await fetchEquipmentOffers(WARERA_JWT);
+      await persistOffers(o);
+      offers = Object.keys(o).length;
+    } catch {
+      /* leave existing offers in place */
+    }
+  }
+
+  return Response.json({ inserted: rows.length, ts, offers });
 }
