@@ -36,11 +36,14 @@ export const ECONOMY_CODES = ECONOMY_ITEMS.map((i) => i.code);
 
 export type ArmorSlot = "helmet" | "chest" | "pants" | "boots" | "gloves";
 
-/** Weapon slot tiers (named items, ascending quality). */
+/** Weapon tiers T1–T6 (named items, ascending quality). */
 export const WEAPON_TIERS: { code: string; tier: number; name: string }[] = [
   { code: "knife", tier: 1, name: "Knife" },
-  { code: "rifle", tier: 2, name: "Rifle" },
-  { code: "sniper", tier: 3, name: "Sniper" },
+  { code: "gun", tier: 2, name: "Gun" },
+  { code: "rifle", tier: 3, name: "Rifle" },
+  { code: "sniper", tier: 4, name: "Sniper" },
+  { code: "tank", tier: 5, name: "Tank" },
+  { code: "jet", tier: 6, name: "Jet" },
 ];
 
 /** 5 armor slots, each with tiers 1–6 (code = `${slot}${tier}`). */
@@ -58,7 +61,7 @@ export function armorCode(slot: ArmorSlot, tier: number): string {
   return `${slot}${tier}`;
 }
 
-/** Every equipment code we track (3 weapons + 5×6 armor = 33). */
+/** Every equipment code we track (6 weapons + 5×6 armor = 36). */
 export const EQUIPMENT_CODES: string[] = [
   ...WEAPON_TIERS.map((w) => w.code),
   ...ARMOR_SLOTS.flatMap((s) => ARMOR_TIERS.map((t) => armorCode(s.slot, t))),
