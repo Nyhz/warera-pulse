@@ -1,78 +1,42 @@
-import type { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { fetchEquipmentOffers, persistOffers, type OfferStat } from "@/lib/offers";
+import type { OfferStat } from "@/lib/offers";
 
 /**
- * Equipment floor prices for all 36 codes.
- *
- * itemOffer.getItemOffers is auth-gated, so a visitor passes their own WarEra
- * JWT (BYOT) via `Authorization: Bearer <jwt>`. The offer data is the GLOBAL
- * market, so it's persisted in Supabase (`equipment_offers`, one row per item)
- * and served to EVERYONE — including tokenless visitors. A tokened request only
- * refreshes the shared copy when it's gone stale. Tokens are forwarded to
- * WarEra and never stored or logged.
- *
- * (The same shared table is also kept fresh without any visitor when a
- * server-side WARERA_JWT is configured — see /api/ingest.)
+ * Equipment prices for all 36 codes, read from the shared `equipment_offers`
+ * table (populated by the cron via the gateway key — see /api/ingest). No token,
+ * instant read; served to everyone.
  */
-/** Refresh from WarEra at most this often (when a tokened visitor shows up). */
-const FRESH_MS = 5 * 60_000;
-/** In-memory cache of the DB read, to avoid querying Supabase every request. */
-const READ_TTL = 20_000;
+const REVALIDATE = 20;
+let cache: { at: number; offers: Record<string, OfferStat> } | null = null;
 
-type OffersPayload = { offers: Record<string, OfferStat>; updatedAt: string | null };
+export async function GET() {
+  if (cache && Date.now() - cache.at < REVALIDATE * 1000) {
+    return Response.json({ offers: cache.offers });
+  }
+  if (!supabase) return Response.json({ offers: {} });
 
-let readCache: { at: number; payload: OffersPayload } | null = null;
-
-async function readPersisted(): Promise<OffersPayload> {
-  if (!supabase) return { offers: {}, updatedAt: null };
   const { data, error } = await supabase
     .from("equipment_offers")
-    .select("item_code, floor, attack, crit, state, updated_at");
-  if (error || !data) return { offers: {}, updatedAt: null };
+    .select("item_code, floor, attack, crit, state");
   const offers: Record<string, OfferStat> = {};
-  let latest: string | null = null;
-  for (const r of data as Array<{
-    item_code: string;
-    floor: number;
-    attack: number | null;
-    crit: number | null;
-    state: number | null;
-    updated_at: string;
-  }>) {
-    offers[r.item_code] = { floor: r.floor, attack: r.attack, crit: r.crit, state: r.state };
-    if (!latest || r.updated_at > latest) latest = r.updated_at;
-  }
-  return { offers, updatedAt: latest };
-}
-
-async function refresh(token: string): Promise<OffersPayload> {
-  const offers = await fetchEquipmentOffers(token);
-  await persistOffers(offers);
-  return { offers, updatedAt: new Date().toISOString() };
-}
-
-export async function GET(req: NextRequest) {
-  let persisted: OffersPayload;
-  if (readCache && Date.now() - readCache.at < READ_TTL) {
-    persisted = readCache.payload;
-  } else {
-    persisted = await readPersisted();
-    readCache = { at: Date.now(), payload: persisted };
-  }
-
-  const ageMs = persisted.updatedAt ? Date.now() - new Date(persisted.updatedAt).getTime() : Infinity;
-  const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-
-  // Stale (or empty) and we have a token → refresh the shared copy from WarEra.
-  if (ageMs > FRESH_MS && token) {
-    try {
-      const fresh = await refresh(token);
-      readCache = { at: Date.now(), payload: fresh };
-      return Response.json(fresh);
-    } catch {
-      /* fall through to whatever we have */
+  if (!error && data) {
+    for (const r of data as Array<{
+      item_code: string;
+      floor: number;
+      attack: number | null;
+      crit: number | null;
+      state: number | null;
+    }>) {
+      offers[r.item_code] = { price: r.floor, attack: r.attack, crit: r.crit, state: r.state };
     }
   }
-  return Response.json(persisted);
+  cache = { at: Date.now(), offers };
+  return Response.json(
+    { offers },
+    {
+      headers: {
+        "cache-control": `public, s-maxage=${REVALIDATE}, stale-while-revalidate=${REVALIDATE * 2}`,
+      },
+    },
+  );
 }

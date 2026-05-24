@@ -90,7 +90,7 @@ function MilRow({
       <span className="text-right font-mono leading-tight tabular-nums">
         {offer ? (
           <>
-            <span className="block text-[12px] font-bold text-txt">{formatPrice(offer.floor)}</span>
+            <span className="block text-[12px] font-bold text-txt">{formatPrice(offer.price)}</span>
             {value != null ? <span className="block text-[9px] text-faint">Q{quality(value)}</span> : null}
           </>
         ) : (

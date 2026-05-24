@@ -16,7 +16,6 @@ import {
 import { ECONOMY_ITEMS } from "@/lib/catalog";
 import type { Candle, Item } from "@/lib/types";
 import { useHistory } from "@/lib/store/history";
-import { useToken } from "@/lib/store/token";
 
 /** Single client poll cadence — the whole UI refreshes on this interval. */
 const POLL = 15_000;
@@ -212,27 +211,22 @@ export function useGameDates() {
 }
 
 export type OfferStat = {
-  floor: number;
+  price: number;
   attack: number | null;
   crit: number | null;
   state: number | null;
 };
 
 /**
- * Equipment floor prices (cheapest offer per item). Served from the shared
- * Supabase cache, so everyone — even without a token — sees prices; a connected
- * token only refreshes the shared copy when stale. Returns the offers map.
+ * Last-traded equipment prices (from itemMarket transactions via the gateway
+ * key). Shared/cached server-side — no token needed.
  */
 export function useEquipmentOffers(enabled = true) {
-  const token = useToken((s) => s.token);
   return useQuery({
-    queryKey: ["offers", !!token],
+    queryKey: ["offers"],
     enabled,
     queryFn: async () => {
-      const res = await fetch(
-        "/api/offers",
-        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
-      );
+      const res = await fetch("/api/offers");
       if (!res.ok) return {} as Record<string, OfferStat>;
       const json = (await res.json()) as { offers?: Record<string, OfferStat> };
       return json.offers ?? {};
